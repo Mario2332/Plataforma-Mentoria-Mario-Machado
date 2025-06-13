@@ -1,6 +1,6 @@
-# Plataforma-Mentoria-Mario-Machado
+# Mario Machado Mentoring Platform
 
-Plataforma de métricas
+Metrics Platform
 
 ## How to Run This Project
 
