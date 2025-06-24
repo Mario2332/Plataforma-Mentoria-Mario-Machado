@@ -6,21 +6,27 @@ import {
   Scripts,
   ScrollRestoration
 } from 'react-router'
-
+import { LoadingSpinner } from '~/components/LoadingSpinner'
+import { Toaster } from '~/components/ui/sonner'
+import { envSchema } from '~/schemas/envSchema'
 import type { Route } from './+types/root'
 import './app.css'
 
+envSchema.parse(import.meta.env)
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt" data-theme="light" suppressHydrationWarning>
+      <title>Mentoria Mario Machado</title>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
-      <body>
-        {children}
+      <body suppressHydrationWarning>
+        <main>{children}</main>
+        <Toaster />
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -30,6 +36,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return <Outlet />
+}
+
+export const HydrateFallback = () => {
+  setTimeout(() => {}, 100000)
+  return (
+    <div className="flex flex-1 h-screen w-screen items-center justify-center">
+      <LoadingSpinner />
+    </div>
+  )
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
