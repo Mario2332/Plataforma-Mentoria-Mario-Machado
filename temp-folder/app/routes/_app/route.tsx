@@ -2,7 +2,7 @@ import { Outlet, redirect } from 'react-router'
 import { NavbarLeft } from '~/components/NavbarLeft'
 import { NavbarLeftMobile } from '~/components/NavbarLeftMobile'
 import AuthProvider from '~/contexts/auth/authProvider'
-import { isAuth } from '~/services/firebase'
+import { isAuth } from '~/services/auth'
 
 export async function clientLoader() {
   const isLogged = await isAuth()

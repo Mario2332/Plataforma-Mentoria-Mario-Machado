@@ -33,6 +33,14 @@ export const envSchema = z.object({
       throw new Error('Invalid port number')
     }
     return port
+  }),
+  VITE_FIREBASE_FIRESTORE_EMULATOR_HOST: z.string(),
+  VITE_FIREBASE_FIRESTORE_EMULATOR_PORT: z.string().transform((val) => {
+    const port = parseInt(val, 10)
+    if (isNaN(port) || port <= 0 || port > 65535) {
+      throw new Error('Invalid port number')
+    }
+    return port
   })
 })
 

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import AuthProvider from '~/contexts/auth/authProvider'
-import { isAuth } from '~/services/firebase'
+import { isAuth } from '~/services/auth'
 
 import { Outlet, redirect } from 'react-router'
 

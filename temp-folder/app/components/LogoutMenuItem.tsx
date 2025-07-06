@@ -1,16 +1,16 @@
 import { useNavigate } from 'react-router'
 import { DropdownMenuItem } from '~/components/ui/dropdown-menu'
 import useAuth from '~/contexts/auth/useAuth'
-import { logout } from '~/services/firebase'
+import { logout } from '~/services/auth'
 
 export function LogoutMenuItem({ children }: { children?: React.ReactNode }) {
   const navigate = useNavigate()
 
-  const { setUser } = useAuth()
+  const { setStudent } = useAuth()
 
   const handleLogout = () => {
     logout()
-    setUser(null)
+    setStudent(null)
     navigate('/')
   }
 

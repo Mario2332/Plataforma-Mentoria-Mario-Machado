@@ -9,7 +9,7 @@ import {
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import useAuth from '~/contexts/auth/useAuth'
-import { loginWithAccessCode } from '~/services/firebase'
+import { loginWithAccessCode } from '~/services/auth'
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -19,7 +19,7 @@ import { defaultValues, loginSchema, type LoginValues } from './schema'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { setUser } = useAuth()
+  const { setStudent } = useAuth()
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -28,9 +28,8 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginValues) => {
     try {
-      const user = await loginWithAccessCode(data.access_code)
-      console.log(' user:', user)
-      setUser(user)
+      const student = await loginWithAccessCode(data.access_code)
+      setStudent(student)
       navigate('/home')
     } catch (error) {
       if (error instanceof Error) {
