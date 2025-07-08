@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM MODAIS E EDIÇÃO CORRIGIDA)
+// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM MODAL UNIFICADO E CORRIGIDO)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -24,15 +24,14 @@ const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "Hi
 let todosOsGraficos = {};
 const pluginTextoNoCentro = { id: 'text-center', afterDatasetsDraw(chart) { const { ctx, data } = chart; const text = data.datasets[0].text; if (!text) return; ctx.save(); const x = chart.getDatasetMeta(0).data[0].x; const y = chart.getDatasetMeta(0).data[0].y; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = '#1c3d5a'; ctx.fillText(text, x, y); ctx.restore(); } };
 
-
 document.addEventListener('DOMContentLoaded', async () => {
     const alunoId = sessionStorage.getItem('alunoId');
     if (!alunoId) { window.location.href = 'index.html'; return; }
     
-    configurarNavegacao(alunoId);
+    configurarNavegacao();
     configurarFormulario(alunoId);
     configurarCabecalhosTabela();
-    configurarModalEdicao();
+    configurarModalPrincipal();
     
     const nomeAluno = sessionStorage.getItem('alunoNome');
     if (nomeAluno) { document.querySelector('.student-info h3').textContent = `Olá, ${nomeAluno}!`; }
@@ -45,14 +44,12 @@ async function carregarDadosIniciais(alunoId) {
         const q = query(collection(db, "registros"), where("alunoId", "==", alunoId));
         const querySnapshot = await getDocs(q);
         meusRegistros = []; 
-        querySnapshot.forEach((doc) => {
-            meusRegistros.push({ id: doc.id, ...doc.data() });
-        });
+        querySnapshot.forEach((doc) => { meusRegistros.push({ id: doc.id, ...doc.data() }); });
         renderizarHistorico(); 
     } catch (error) { console.error("Erro ao buscar dados iniciais: ", error); }
 }
 
-function configurarNavegacao(alunoId) {
+function configurarNavegacao() {
     const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico') };
     const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos') };
     function mudarAba(abaAtiva) {
@@ -84,18 +81,14 @@ function configurarFormulario(alunoId) {
             meusRegistros.push({ id: docRef.id, ...novoRegistro });
             renderizarHistorico();
             showCustomAlert("Registro salvo com sucesso!");
-        } catch (e) {
-            console.error("Erro ao adicionar documento: ", e);
-            showCustomAlert("Ocorreu um erro ao salvar o registro.", "erro");
-        }
+        } catch (e) { showCustomAlert("Ocorreu um erro ao salvar o registro.", "erro"); }
     });
 }
 
 function configurarCabecalhosTabela() {
     document.querySelectorAll('#tabela-historico th.sortable').forEach(header => {
         header.addEventListener('click', () => {
-            const column = header.dataset.sort;
-            if (!column) return;
+            const column = header.dataset.sort; if (!column) return;
             const direction = sortState.column === column && sortState.direction === 'desc' ? 'asc' : 'desc';
             sortState = { column, direction };
             document.querySelectorAll('#tabela-historico th.sortable').forEach(th => th.classList.remove('active-sort'));
@@ -130,58 +123,55 @@ function renderizarHistorico() {
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
         tr.innerHTML = `
-            <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td><td>${reg.questoesFeitas || 0}</td>
-            <td>${reg.questoesAcertadas || 0}</td><td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>
+            <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td>
+            <td>${reg.questoesFeitas || 0}</td><td>${reg.questoesAcertadas || 0}</td>
+            <td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>
             <td><div class="action-buttons">
                 <button class="action-btn edit-btn" data-id="${reg.id}" title="Editar">✏️</button>
                 <button class="action-btn delete-btn" data-id="${reg.id}" title="Excluir">🗑️</button>
             </div></td>`;
         tbody.appendChild(tr);
     });
-    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', abrirModalDeEdicao));
+    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', abrirFormularioEdicao));
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', deletarRegistro));
 }
 
-function abrirModalDeEdicao(event) {
+function abrirFormularioEdicao(event) {
     const docId = event.currentTarget.dataset.id;
-    const registroParaEditar = meusRegistros.find(r => r.id === docId);
-    if (!registroParaEditar) return;
-    const formEdicao = document.getElementById('form-edicao');
-    formEdicao.innerHTML = `
-        <input type="hidden" id="edit-doc-id" value="${docId}">
-        <div class="form-group"><label for="edit-materia">Matéria:</label><select id="edit-materia" required>${TODAS_AS_MATERIAS.map(m => `<option value="${m}" ${m === registroParaEditar.materia ? 'selected' : ''}>${m}</option>`).join('')}</select></div>
-        <div class="form-group"><label for="edit-tempo">Tempo (min):</label><input type="number" id="edit-tempo" value="${registroParaEditar.tempoEstudado || 0}" required min="1"></div>
-        <div class="form-group"><label for="edit-questoes">Questões:</label><input type="number" id="edit-questoes" value="${registroParaEditar.questoesFeitas || 0}" min="0"></div>
-        <div class="form-group"><label for="edit-acertos">Acertos:</label><input type="number" id="edit-acertos" value="${registroParaEditar.questoesAcertadas || 0}" min="0"></div>
-        <div class="form-group"><label for="edit-flashcards">Flashcards:</label><input type="number" id="edit-flashcards" value="${registroParaEditar.flashcardsFeitos || 0}" min="0"></div>
-        <button type="submit">Salvar Alterações</button>`;
-    document.getElementById('edit-modal').classList.remove('hidden');
+    const registro = meusRegistros.find(r => r.id === docId);
+    if (!registro) return;
+    const formHTML = `<h2>Editar Registro</h2><form id="form-edicao" data-id="${docId}">
+        <div class="form-group"><label for="edit-materia">Matéria:</label><select id="edit-materia" required>${TODAS_AS_MATERIAS.map(m => `<option value="${m}" ${m === registro.materia ? 'selected' : ''}>${m}</option>`).join('')}</select></div>
+        <div class="form-group"><label for="edit-tempo">Tempo (min):</label><input type="number" id="edit-tempo" value="${registro.tempoEstudado || 0}" required min="1"></div>
+        <div class="form-group"><label for="edit-questoes">Questões:</label><input type="number" id="edit-questoes" value="${registro.questoesFeitas || 0}" min="0"></div>
+        <div class="form-group"><label for="edit-acertos">Acertos:</label><input type="number" id="edit-acertos" value="${registro.questoesAcertadas || 0}" min="0"></div>
+        <div class="form-group"><label for="edit-flashcards">Flashcards:</label><input type="number" id="edit-flashcards" value="${registro.flashcardsFeitos || 0}" min="0"></div>
+        <div class="modal-buttons"><button type="button" class="modal-btn btn-cancel">Cancelar</button><button type="submit" class="modal-btn edit-btn">Salvar Alterações</button></div>
+        </form>`;
+    showCustomModal(formHTML);
+    document.getElementById('form-edicao').addEventListener('submit', salvarEdicao);
+    document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
 }
 
-function configurarModalEdicao() {
-    const modal = document.getElementById('edit-modal');
-    modal.querySelector('.close-modal-btn').addEventListener('click', () => modal.classList.add('hidden'));
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
-    document.getElementById('form-edicao').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const docId = document.getElementById('edit-doc-id').value;
-        const dadosAtualizados = {
-            materia: document.getElementById('edit-materia').value,
-            tempoEstudado: Number(document.getElementById('edit-tempo').value),
-            questoesFeitas: Number(document.getElementById('edit-questoes').value),
-            questoesAcertadas: Number(document.getElementById('edit-acertos').value),
-            flashcardsFeitos: Number(document.getElementById('edit-flashcards').value),
-        };
-        try {
-            const docRef = doc(db, 'registros', docId);
-            await updateDoc(docRef, dadosAtualizados);
-            const index = meusRegistros.findIndex(r => r.id === docId);
-            meusRegistros[index] = { ...meusRegistros[index], ...dadosAtualizados };
-            renderizarHistorico();
-            modal.classList.add('hidden');
-            showCustomAlert("Registro atualizado com sucesso!");
-        } catch (error) { showCustomAlert("Falha ao atualizar o registro.", "erro"); }
-    });
+async function salvarEdicao(event) {
+    event.preventDefault();
+    const docId = event.currentTarget.dataset.id;
+    const dadosAtualizados = {
+        materia: document.getElementById('edit-materia').value,
+        tempoEstudado: Number(document.getElementById('edit-tempo').value),
+        questoesFeitas: Number(document.getElementById('edit-questoes').value),
+        questoesAcertadas: Number(document.getElementById('edit-acertos').value),
+        flashcardsFeitos: Number(document.getElementById('edit-flashcards').value),
+    };
+    try {
+        const docRef = doc(db, 'registros', docId);
+        await updateDoc(docRef, dadosAtualizados);
+        const index = meusRegistros.findIndex(r => r.id === docId);
+        meusRegistros[index] = { ...meusRegistros[index], ...dadosAtualizados };
+        renderizarHistorico();
+        hideCustomModal();
+        showCustomAlert("Registro atualizado com sucesso!");
+    } catch (error) { showCustomAlert("Falha ao atualizar o registro.", "erro"); }
 }
 
 async function deletarRegistro(event) {
@@ -198,22 +188,38 @@ async function deletarRegistro(event) {
     showCustomConfirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.", fazerExclusao);
 }
 
-const alertModal = document.getElementById('alert-modal');
-function showCustomAlert(message) {
-    alertModal.querySelector('#alert-message').textContent = message;
-    alertModal.querySelector('#alert-buttons').innerHTML = '<button class="modal-btn btn-cancel">OK</button>';
-    alertModal.querySelector('.btn-cancel').onclick = () => alertModal.classList.add('hidden');
-    alertModal.classList.remove('hidden');
+function configurarModalPrincipal() {
+    const modal = document.getElementById('main-modal');
+    modal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('close-modal-btn') || e.target === modal) {
+            hideCustomModal();
+        }
+    });
 }
+
+function showCustomModal(contentHTML) {
+    document.getElementById('modal-body').innerHTML = contentHTML;
+    document.getElementById('main-modal').classList.remove('hidden');
+}
+
+function hideCustomModal() {
+    document.getElementById('main-modal').classList.add('hidden');
+}
+
+function showCustomAlert(message) {
+    const alertHTML = `<h3>Aviso</h3><p>${message}</p><div class="modal-buttons"><button class="modal-btn btn-cancel">OK</button></div>`;
+    showCustomModal(alertHTML);
+    document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
+}
+
 function showCustomConfirm(message, onConfirm) {
-    alertModal.querySelector('#alert-message').textContent = message;
-    alertModal.querySelector('#alert-buttons').innerHTML = `<button class="modal-btn btn-cancel">Cancelar</button><button class="modal-btn btn-confirm">Excluir</button>`;
-    alertModal.querySelector('.btn-cancel').onclick = () => alertModal.classList.add('hidden');
-    alertModal.querySelector('.btn-confirm').onclick = () => {
-        alertModal.classList.add('hidden');
+    const confirmHTML = `<h3>Confirmação</h3><p>${message}</p><div class="modal-buttons"><button class="modal-btn btn-cancel">Cancelar</button><button class="modal-btn btn-confirm">Excluir</button></div>`;
+    showCustomModal(confirmHTML);
+    document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
+    document.querySelector('#main-modal .btn-confirm').onclick = () => {
+        hideCustomModal();
         onConfirm();
     };
-    alertModal.classList.remove('hidden');
 }
 
 function processarMetricas() {
