@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM EDIÇÃO EM LINHA)
+// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM MODAIS E EDIÇÃO CORRIGIDA)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -21,19 +21,22 @@ const db = getFirestore(app);
 let meusRegistros = []; 
 let sortState = { column: 'dataRegistro', direction: 'desc' };
 const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Filosofia", "Sociologia", "Linguagens"];
+let todosOsGraficos = {};
+const pluginTextoNoCentro = { id: 'text-center', afterDatasetsDraw(chart) { const { ctx, data } = chart; const text = data.datasets[0].text; if (!text) return; ctx.save(); const x = chart.getDatasetMeta(0).data[0].x; const y = chart.getDatasetMeta(0).data[0].y; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = '#1c3d5a'; ctx.fillText(text, x, y); ctx.restore(); } };
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     const alunoId = sessionStorage.getItem('alunoId');
-    if (!alunoId) {
-        alert("Sessão expirada. Por favor, faça o login novamente.");
-        window.location.href = 'index.html';
-        return;
-    }
-    configurarNavegacao();
+    if (!alunoId) { window.location.href = 'index.html'; return; }
+    
+    configurarNavegacao(alunoId);
     configurarFormulario(alunoId);
     configurarCabecalhosTabela();
+    configurarModalEdicao();
+    
     const nomeAluno = sessionStorage.getItem('alunoNome');
     if (nomeAluno) { document.querySelector('.student-info h3').textContent = `Olá, ${nomeAluno}!`; }
+    
     await carregarDadosIniciais(alunoId);
 });
 
@@ -49,17 +52,9 @@ async function carregarDadosIniciais(alunoId) {
     } catch (error) { console.error("Erro ao buscar dados iniciais: ", error); }
 }
 
-function configurarNavegacao() {
-    const navItems = {
-        registro: document.getElementById('nav-registro'),
-        metricas: document.getElementById('nav-metricas'),
-        historico: document.getElementById('nav-historico')
-    };
-    const sections = {
-        registro: document.getElementById('registro-estudos'),
-        metricas: document.getElementById('minhas-metricas'),
-        historico: document.getElementById('historico-estudos')
-    };
+function configurarNavegacao(alunoId) {
+    const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico') };
+    const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos') };
     function mudarAba(abaAtiva) {
         Object.keys(sections).forEach(key => sections[key]?.classList.toggle('hidden', key !== abaAtiva));
         Object.keys(navItems).forEach(key => navItems[key]?.classList.remove('active'));
@@ -67,10 +62,7 @@ function configurarNavegacao() {
         if (abaAtiva === 'metricas') processarMetricas();
     }
     Object.keys(navItems).forEach(key => {
-        if(navItems[key]) navItems[key].addEventListener('click', (e) => {
-            e.preventDefault();
-            mudarAba(key);
-        });
+        if(navItems[key]) navItems[key].addEventListener('click', (e) => { e.preventDefault(); mudarAba(key); });
     });
 }
 
@@ -89,11 +81,13 @@ function configurarFormulario(alunoId) {
         };
         try {
             const docRef = await addDoc(collection(db, "registros"), novoRegistro);
-            alert("Registro salvo com sucesso!");
-            formRegistro.reset();
             meusRegistros.push({ id: docRef.id, ...novoRegistro });
             renderizarHistorico();
-        } catch (e) { console.error("Erro ao adicionar documento: ", e); }
+            showCustomAlert("Registro salvo com sucesso!");
+        } catch (e) {
+            console.error("Erro ao adicionar documento: ", e);
+            showCustomAlert("Ocorreu um erro ao salvar o registro.", "erro");
+        }
     });
 }
 
@@ -104,7 +98,7 @@ function configurarCabecalhosTabela() {
             if (!column) return;
             const direction = sortState.column === column && sortState.direction === 'desc' ? 'asc' : 'desc';
             sortState = { column, direction };
-            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => { th.classList.remove('active-sort'); });
+            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => th.classList.remove('active-sort'));
             header.classList.add('active-sort');
             renderizarHistorico();
         });
@@ -131,96 +125,95 @@ function renderizarHistorico() {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhum registro de estudo encontrado.</td></tr>';
         return;
     }
-    meusRegistros.forEach((reg, index) => {
+    meusRegistros.forEach((reg) => {
         const tr = document.createElement('tr');
-        tr.dataset.index = index;
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
         tr.innerHTML = `
-            <td data-field="data">${data}</td>
-            <td data-field="materia">${reg.materia || ''}</td>
-            <td data-field="tempoEstudado">${reg.tempoEstudado || 0}</td>
-            <td data-field="questoesFeitas">${reg.questoesFeitas || 0}</td>
-            <td data-field="questoesAcertadas">${reg.questoesAcertadas || 0}</td>
-            <td data-field="desempenho">${desempenho}</td>
-            <td data-field="flashcardsFeitos">${reg.flashcardsFeitos || 0}</td>
-            <td class="coluna-acoes">
-                <div class="action-buttons">
-                    <button class="action-btn edit-btn" title="Editar">✏️</button>
-                    <button class="action-btn delete-btn" title="Excluir">🗑️</button>
-                </div>
-            </td>
-        `;
+            <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td><td>${reg.questoesFeitas || 0}</td>
+            <td>${reg.questoesAcertadas || 0}</td><td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>
+            <td><div class="action-buttons">
+                <button class="action-btn edit-btn" data-id="${reg.id}" title="Editar">✏️</button>
+                <button class="action-btn delete-btn" data-id="${reg.id}" title="Excluir">🗑️</button>
+            </div></td>`;
         tbody.appendChild(tr);
     });
-    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', ativarModoEdicao));
+    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', abrirModalDeEdicao));
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', deletarRegistro));
 }
 
-function ativarModoEdicao(event) {
-    renderizarHistorico(); // Restaura qualquer outra linha que estivesse em modo de edição
-    const btn = event.currentTarget;
-    const tr = btn.closest('tr');
-    const { index } = tr.dataset;
-    const registro = meusRegistros[index];
-
-    const celulas = tr.querySelectorAll('td');
-    celulas[1].innerHTML = `<select>${TODAS_AS_MATERIAS.map(m => `<option value="${m}" ${m === registro.materia ? 'selected' : ''}>${m}</option>`).join('')}</select>`;
-    celulas[2].innerHTML = `<input type="number" value="${registro.tempoEstudado}">`;
-    celulas[3].innerHTML = `<input type="number" value="${registro.questoesFeitas}">`;
-    celulas[4].innerHTML = `<input type="number" value="${registro.questoesAcertadas}">`;
-    celulas[6].innerHTML = `<input type="number" value="${registro.flashcardsFeitos}">`;
-    
-    celulas[7].innerHTML = `
-        <div class="action-buttons" style="opacity: 1;">
-            <button class="action-btn confirm-btn" title="Confirmar">✔️</button>
-            <button class="action-btn cancel-btn" title="Cancelar">✖️</button>
-        </div>
-    `;
-    tr.querySelector('.confirm-btn').addEventListener('click', () => salvarEdicao(tr, index));
-    tr.querySelector('.cancel-btn').addEventListener('click', () => renderizarHistorico());
+function abrirModalDeEdicao(event) {
+    const docId = event.currentTarget.dataset.id;
+    const registroParaEditar = meusRegistros.find(r => r.id === docId);
+    if (!registroParaEditar) return;
+    const formEdicao = document.getElementById('form-edicao');
+    formEdicao.innerHTML = `
+        <input type="hidden" id="edit-doc-id" value="${docId}">
+        <div class="form-group"><label for="edit-materia">Matéria:</label><select id="edit-materia" required>${TODAS_AS_MATERIAS.map(m => `<option value="${m}" ${m === registroParaEditar.materia ? 'selected' : ''}>${m}</option>`).join('')}</select></div>
+        <div class="form-group"><label for="edit-tempo">Tempo (min):</label><input type="number" id="edit-tempo" value="${registroParaEditar.tempoEstudado || 0}" required min="1"></div>
+        <div class="form-group"><label for="edit-questoes">Questões:</label><input type="number" id="edit-questoes" value="${registroParaEditar.questoesFeitas || 0}" min="0"></div>
+        <div class="form-group"><label for="edit-acertos">Acertos:</label><input type="number" id="edit-acertos" value="${registroParaEditar.questoesAcertadas || 0}" min="0"></div>
+        <div class="form-group"><label for="edit-flashcards">Flashcards:</label><input type="number" id="edit-flashcards" value="${registroParaEditar.flashcardsFeitos || 0}" min="0"></div>
+        <button type="submit">Salvar Alterações</button>`;
+    document.getElementById('edit-modal').classList.remove('hidden');
 }
 
-async function salvarEdicao(tr, index) {
-    const registroOriginal = meusRegistros[index];
-    const dadosAtualizados = {
-        materia: tr.querySelector('select').value,
-        tempoEstudado: Number(tr.cells[2].querySelector('input').value),
-        questoesFeitas: Number(tr.cells[3].querySelector('input').value),
-        questoesAcertadas: Number(tr.cells[4].querySelector('input').value),
-        flashcardsFeitos: Number(tr.cells[6].querySelector('input').value),
-    };
-
-    try {
-        const docRef = doc(db, 'registros', registroOriginal.id);
-        await updateDoc(docRef, dadosAtualizados);
-        meusRegistros[index] = { ...registroOriginal, ...dadosAtualizados };
-        alert("Registro atualizado!");
-    } catch (error) {
-        alert("Falha ao atualizar.");
-        console.error("Erro ao atualizar: ", error);
-    } finally {
-        renderizarHistorico();
-    }
+function configurarModalEdicao() {
+    const modal = document.getElementById('edit-modal');
+    modal.querySelector('.close-modal-btn').addEventListener('click', () => modal.classList.add('hidden'));
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+    document.getElementById('form-edicao').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const docId = document.getElementById('edit-doc-id').value;
+        const dadosAtualizados = {
+            materia: document.getElementById('edit-materia').value,
+            tempoEstudado: Number(document.getElementById('edit-tempo').value),
+            questoesFeitas: Number(document.getElementById('edit-questoes').value),
+            questoesAcertadas: Number(document.getElementById('edit-acertos').value),
+            flashcardsFeitos: Number(document.getElementById('edit-flashcards').value),
+        };
+        try {
+            const docRef = doc(db, 'registros', docId);
+            await updateDoc(docRef, dadosAtualizados);
+            const index = meusRegistros.findIndex(r => r.id === docId);
+            meusRegistros[index] = { ...meusRegistros[index], ...dadosAtualizados };
+            renderizarHistorico();
+            modal.classList.add('hidden');
+            showCustomAlert("Registro atualizado com sucesso!");
+        } catch (error) { showCustomAlert("Falha ao atualizar o registro.", "erro"); }
+    });
 }
 
 async function deletarRegistro(event) {
-    const btn = event.currentTarget;
-    const tr = btn.closest('tr');
-    const { index } = tr.dataset;
-    const registro = meusRegistros[index];
-
-    if (confirm("Tem certeza que deseja excluir este registro? A ação não pode ser desfeita.")) {
+    const docId = event.currentTarget.dataset.id;
+    const fazerExclusao = async () => {
         try {
-            await deleteDoc(doc(db, "registros", registro.id));
-            meusRegistros.splice(index, 1);
+            await deleteDoc(doc(db, "registros", docId));
+            meusRegistros = meusRegistros.filter(r => r.id !== docId);
             renderizarHistorico();
-            alert("Registro excluído.");
-        } catch (error) {
-            alert("Falha ao excluir.");
-            console.error("Erro ao excluir: ", error);
-        }
-    }
+            processarMetricas();
+            showCustomAlert("Registro excluído com sucesso.");
+        } catch (error) { showCustomAlert("Falha ao excluir o registro.", "erro"); }
+    };
+    showCustomConfirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.", fazerExclusao);
+}
+
+const alertModal = document.getElementById('alert-modal');
+function showCustomAlert(message) {
+    alertModal.querySelector('#alert-message').textContent = message;
+    alertModal.querySelector('#alert-buttons').innerHTML = '<button class="modal-btn btn-cancel">OK</button>';
+    alertModal.querySelector('.btn-cancel').onclick = () => alertModal.classList.add('hidden');
+    alertModal.classList.remove('hidden');
+}
+function showCustomConfirm(message, onConfirm) {
+    alertModal.querySelector('#alert-message').textContent = message;
+    alertModal.querySelector('#alert-buttons').innerHTML = `<button class="modal-btn btn-cancel">Cancelar</button><button class="modal-btn btn-confirm">Excluir</button>`;
+    alertModal.querySelector('.btn-cancel').onclick = () => alertModal.classList.add('hidden');
+    alertModal.querySelector('.btn-confirm').onclick = () => {
+        alertModal.classList.add('hidden');
+        onConfirm();
+    };
+    alertModal.classList.remove('hidden');
 }
 
 function processarMetricas() {

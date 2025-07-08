@@ -575,3 +575,97 @@ main {
     border-radius: 4px;
     box-sizing: border-box;
 }
+
+/* ========================================= */
+/* ESTILOS DO NOVO SISTEMA DE MODAL/POP-UP   */
+/* ========================================= */
+
+.modal-container {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Fundo mais escuro */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-container:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 450px;
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+
+.modal-container:not(.hidden) .modal-content {
+    transform: scale(1);
+}
+
+.modal-content h2, .modal-content h3 {
+    margin-top: 0;
+    color: #1c3d5a;
+}
+
+.modal-content p {
+    color: #4a5568;
+    line-height: 1.6;
+}
+
+.close-modal-btn {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close-modal-btn:hover {
+    color: #000;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.modal-btn {
+    border: none;
+    padding: 10px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+
+.btn-confirm {
+    background-color: #dc3545; /* Vermelho para confirmar exclusão */
+    color: white;
+}
+.btn-confirm:hover { background-color: #c82333; }
+
+.btn-cancel {
+    background-color: #e9edf2; /* Cinza claro */
+    color: #4a5568;
+}
+.btn-cancel:hover { background-color: #dbe1e8; 
+}
