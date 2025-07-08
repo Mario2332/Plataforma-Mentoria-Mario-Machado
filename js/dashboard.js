@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM MODAL UNIFICADO E CORRIGIDO)
+// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM TODAS AS CORREÇÕES)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const alunoId = sessionStorage.getItem('alunoId');
     if (!alunoId) { window.location.href = 'index.html'; return; }
     
-    configurarNavegacao();
+    configurarNavegacao(alunoId);
     configurarFormulario(alunoId);
     configurarCabecalhosTabela();
     configurarModalPrincipal();
@@ -91,7 +91,7 @@ function configurarCabecalhosTabela() {
             const column = header.dataset.sort; if (!column) return;
             const direction = sortState.column === column && sortState.direction === 'desc' ? 'asc' : 'desc';
             sortState = { column, direction };
-            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => th.classList.remove('active-sort'));
+            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => { th.classList.remove('active-sort'); });
             header.classList.add('active-sort');
             renderizarHistorico();
         });
@@ -103,12 +103,8 @@ function renderizarHistorico() {
     if (!tbody) return;
     meusRegistros.sort((a, b) => {
         let valA = a[sortState.column]; let valB = b[sortState.column];
-        if (sortState.column === 'desempenho') {
-            valA = a.questoesFeitas > 0 ? (a.questoesAcertadas / a.questoesFeitas) : -1;
-            valB = b.questoesFeitas > 0 ? (b.questoesAcertadas / b.questoesFeitas) : -1;
-        }
-        if (valA?.toDate) valA = valA.toDate();
-        if (valB?.toDate) valB = valB.toDate();
+        if (sortState.column === 'desempenho') { valA = a.questoesFeitas > 0 ? (a.questoesAcertadas / a.questoesFeitas) : -1; valB = b.questoesFeitas > 0 ? (b.questoesAcertadas / b.questoesFeitas) : -1; }
+        if (valA?.toDate) valA = valA.toDate(); if (valB?.toDate) valB = valB.toDate();
         if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
         if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
         return 0;
@@ -123,9 +119,8 @@ function renderizarHistorico() {
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
         tr.innerHTML = `
-            <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td>
-            <td>${reg.questoesFeitas || 0}</td><td>${reg.questoesAcertadas || 0}</td>
-            <td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>
+            <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td><td>${reg.questoesFeitas || 0}</td>
+            <td>${reg.questoesAcertadas || 0}</td><td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>
             <td><div class="action-buttons">
                 <button class="action-btn edit-btn" data-id="${reg.id}" title="Editar">✏️</button>
                 <button class="action-btn delete-btn" data-id="${reg.id}" title="Excluir">🗑️</button>
@@ -223,7 +218,6 @@ function showCustomConfirm(message, onConfirm) {
 }
 
 function processarMetricas() {
-    console.log("Processando métricas e desenhando gráficos...");
     let tempoTotal = 0, questoesTotal = 0, acertosTotal = 0;
     const contagemPorDia = {}, dadosPorMateria = {};
     TODAS_AS_MATERIAS.forEach(materia => { dadosPorMateria[materia] = { questoes: 0, acertos: 0, flashcards: 0 }; });
@@ -241,6 +235,7 @@ function processarMetricas() {
         }
     });
 
+    const desempenhoGeral = questoesTotal > 0 ? (acertosTotal / questoesTotal) * 100 : 0;
     document.getElementById('stat-tempo-total').textContent = `${tempoTotal} min`;
     document.getElementById('stat-questoes-total').textContent = questoesTotal;
     document.getElementById('stat-acertos-total').textContent = acertosTotal;
@@ -272,14 +267,14 @@ function processarMetricas() {
         heatmapContainer.appendChild(diaElemento);
     }
     
+    Object.values(todosOsGraficos).forEach(grafico => grafico?.destroy());
+
     const labelsMaterias = TODAS_AS_MATERIAS;
     const dadosQuestoes = labelsMaterias.map(m => dadosPorMateria[m].questoes);
     const dadosDesempenho = labelsMaterias.map(m => { const d = dadosPorMateria[m]; return d.questoes > 0 ? (d.acertos / d.questoes) * 100 : 0; });
     const dadosFlashcards = labelsMaterias.map(m => dadosPorMateria[m].flashcards);
-
-    // Destruir e recriar gráficos
-    Object.values(todosOsGraficos).forEach(grafico => grafico?.destroy());
-
+    
+    todosOsGraficos.donut = new Chart(document.getElementById('grafico-desempenho-geral'), { type: 'doughnut', data: { datasets: [{ data: [desempenhoGeral, 100 - desempenhoGeral], backgroundColor: ['#007BFF', '#e9edf2'], borderWidth: 0, text: `${desempenhoGeral.toFixed(0)}%` }] }, options: { responsive: true, cutout: '75%', plugins: { legend: { display: false } } }, plugins: [pluginTextoNoCentro] });
     todosOsGraficos.materias = new Chart(document.getElementById('grafico-materias'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Questões Feitas', data: dadosQuestoes, backgroundColor: 'rgba(54, 162, 235, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
     todosOsGraficos.desempenho = new Chart(document.getElementById('grafico-desempenho'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Desempenho (%)', data: dadosDesempenho, backgroundColor: 'rgba(255, 206, 86, 0.7)' }] }, options: { scales: { y: { beginAtZero: true, max: 100 } } } });
     todosOsGraficos.flashcards = new Chart(document.getElementById('grafico-flashcards-materia'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Flashcards Feitos', data: dadosFlashcards, backgroundColor: 'rgba(153, 102, 255, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
