@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT DO DASHBOARD (VERSÃO COM CORREÇÃO FINAL DO HISTÓRICO)
+// SCRIPT DO DASHBOARD (VERSÃO FINAL COM DIAGNÓSTICO)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -18,23 +18,29 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Variáveis globais
 let meusRegistros = []; 
 let sortState = { column: 'dataRegistro', direction: 'desc' };
 let todosOsGraficos = {};
 const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Filosofia", "Sociologia", "Linguagens"];
 
+// Roda quando a página carrega
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log("DOM Carregado. Iniciando a plataforma do aluno...");
     const alunoId = sessionStorage.getItem('alunoId');
     if (!alunoId) {
         alert("Sessão expirada. Por favor, faça o login novamente.");
         window.location.href = 'index.html';
         return;
     }
+
     configurarNavegacao(alunoId);
     configurarFormulario(alunoId);
     configurarCabecalhosTabela();
+    
     const nomeAluno = sessionStorage.getItem('alunoNome');
     if (nomeAluno) { document.querySelector('.student-info h3').textContent = `Olá, ${nomeAluno}!`; }
+    
     await carregarDadosIniciais(alunoId);
 });
 
@@ -45,42 +51,61 @@ async function carregarDadosIniciais(alunoId) {
         const querySnapshot = await getDocs(q);
         meusRegistros = []; 
         querySnapshot.forEach((doc) => { meusRegistros.push(doc.data()); });
-        console.log(`Dashboard inicializado com ${meusRegistros.length} registros carregados.`);
-        renderizarHistorico();
+        console.log(`Dados carregados: ${meusRegistros.length} registros encontrados.`);
+        renderizarHistorico(); 
     } catch (error) {
-        console.error("Erro ao buscar dados iniciais: ", error);
-        alert("Não foi possível carregar seus dados.");
+        console.error("ERRO ao buscar dados iniciais: ", error);
+        alert("Não foi possível carregar seus dados. Verifique sua conexão e tente recarregar a página.");
     }
 }
 
 function configurarNavegacao(alunoId) {
-    const navRegistro = document.getElementById('nav-registro');
-    const navMetricas = document.getElementById('nav-metricas');
-    const navHistorico = document.getElementById('nav-historico');
-    const secaoRegistro = document.getElementById('registro-estudos');
-    const secaoMetricas = document.getElementById('minhas-metricas');
-    const secaoHistorico = document.getElementById('historico-estudos');
+    console.log("Configurando navegação...");
+    const navItems = {
+        registro: document.getElementById('nav-registro'),
+        metricas: document.getElementById('nav-metricas'),
+        historico: document.getElementById('nav-historico')
+    };
+    const sections = {
+        registro: document.getElementById('registro-estudos'),
+        metricas: document.getElementById('minhas-metricas'),
+        historico: document.getElementById('historico-estudos')
+    };
 
-    navRegistro.addEventListener('click', (e) => {
-        e.preventDefault();
-        secaoRegistro.classList.remove('hidden'); secaoMetricas.classList.add('hidden'); secaoHistorico.classList.add('hidden');
-        navRegistro.classList.add('active'); navMetricas.classList.remove('active'); navHistorico.classList.remove('active');
-    });
-    navMetricas.addEventListener('click', (e) => {
-        e.preventDefault();
-        secaoRegistro.classList.add('hidden'); secaoMetricas.classList.remove('hidden'); secaoHistorico.classList.add('hidden');
-        navRegistro.classList.remove('active'); navMetricas.classList.add('active'); navHistorico.classList.remove('active');
-        processarMetricas();
-    });
-    navHistorico.addEventListener('click', (e) => {
-        e.preventDefault();
-        secaoRegistro.classList.add('hidden'); secaoMetricas.classList.add('hidden'); secaoHistorico.classList.remove('hidden');
-        navRegistro.classList.remove('active'); navMetricas.classList.remove('active'); navHistorico.classList.add('active');
+    // Função para mudar de aba
+    function mudarAba(abaAtiva) {
+        console.log(`Mudando para a aba: ${abaAtiva}`);
+        Object.keys(sections).forEach(key => {
+            sections[key].classList.toggle('hidden', key !== abaAtiva);
+        });
+        Object.keys(navItems).forEach(key => {
+            navItems[key].classList.toggle('active', key !== abaAtiva);
+        });
+        navItems[abaAtiva].classList.add('active');
+
+        // Lógica específica da aba
+        if (abaAtiva === 'metricas') {
+            console.log("Aba de Métricas ativada. Processando gráficos...");
+            processarMetricas();
+        }
+    }
+
+    // Adiciona os eventos de clique
+    Object.keys(navItems).forEach(key => {
+        if(navItems[key]) {
+            navItems[key].addEventListener('click', (e) => {
+                e.preventDefault();
+                mudarAba(key);
+            });
+        } else {
+            console.error(`ERRO: Elemento de navegação não encontrado para a chave: ${key}`);
+        }
     });
 }
 
 function configurarFormulario(alunoId) {
     const formRegistro = document.getElementById('form-registro');
+    if (!formRegistro) return;
     formRegistro.addEventListener('submit', async (event) => {
         event.preventDefault();
         const novoRegistro = {
@@ -100,7 +125,7 @@ function configurarFormulario(alunoId) {
             renderizarHistorico();
             console.log("Registro salvo e tabela de histórico atualizada.");
         } catch (e) {
-            console.error("Erro ao adicionar documento: ", e);
+            console.error("ERRO ao salvar registro: ", e);
             alert("Ocorreu um erro ao salvar o registro.");
         }
     });
@@ -111,19 +136,24 @@ function configurarCabecalhosTabela() {
         header.addEventListener('click', () => {
             const column = header.dataset.sort;
             if (!column) return;
-            console.log(`Ordenando pela coluna: ${column}`);
             const direction = sortState.column === column && sortState.direction === 'desc' ? 'asc' : 'desc';
             sortState = { column, direction };
-            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => { th.classList.remove('active-sort', 'asc', 'desc'); });
-            header.classList.add('active-sort', direction);
+            console.log(`Ordenando por '${column}' na direção '${direction}'`);
+            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => { th.classList.remove('active-sort'); });
+            header.classList.add('active-sort');
             renderizarHistorico();
         });
     });
 }
 
 function renderizarHistorico() {
-    console.log("Renderizando histórico...");
-    if (!meusRegistros) return;
+    const tbody = document.querySelector('#tabela-historico tbody');
+    if (!tbody) {
+        console.error("ERRO: O corpo da tabela de histórico (tbody) não foi encontrado.");
+        return;
+    }
+    
+    // Ordena a lista de registros
     meusRegistros.sort((a, b) => {
         let valA = a[sortState.column]; let valB = b[sortState.column];
         if (sortState.column === 'desempenho') {
@@ -136,22 +166,20 @@ function renderizarHistorico() {
         if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
         return 0;
     });
-    const tbody = document.querySelector('#tabela-historico tbody');
-    if (!tbody) return;
-    tbody.innerHTML = ''; 
+
+    tbody.innerHTML = '';
+    if (meusRegistros.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum registro de estudo encontrado.</td></tr>';
+        return;
+    }
+    
     meusRegistros.forEach(reg => {
         const tr = document.createElement('tr');
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
-        tr.innerHTML = `
-            <td>${data}</td> <td>${reg.materia || ''}</td>
-            <td>${reg.tempoEstudado || 0}</td> <td>${reg.questoesFeitas || 0}</td>
-            <td>${reg.questoesAcertadas || 0}</td> <td>${desempenho}</td>
-            <td>${reg.flashcardsFeitos || 0}</td>
-        `;
+        tr.innerHTML = `<td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td><td>${reg.questoesFeitas || 0}</td><td>${reg.questoesAcertadas || 0}</td><td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>`;
         tbody.appendChild(tr);
     });
-    console.log(`Histórico renderizado com ${meusRegistros.length} registros.`);
 }
 
 function processarMetricas() {
