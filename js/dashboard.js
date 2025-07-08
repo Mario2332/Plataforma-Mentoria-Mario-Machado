@@ -1,10 +1,12 @@
 // =================================================================
-// SCRIPT DO DASHBOARD (VERSÃO FINAL E COMPLETA)
+// SCRIPT COMPLETO DO DASHBOARD (COM EDIÇÃO E EXCLUSÃO)
 // =================================================================
 
+// 1. IMPORTAR AS FERRAMENTAS DO FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// 2. CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyCL2Lx5ccKeGVpybuxKZKLRscWYbcPgjJc",
     authDomain: "mentoria-mario-machado.firebaseapp.com",
@@ -15,18 +17,18 @@ const firebaseConfig = {
     measurementId: "G-Q5603DS6NP"
 };
 
+// 3. INICIALIZAR O FIREBASE E O FIRESTORE
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Variáveis globais
+// 4. VARIÁVEIS GLOBAIS
 let meusRegistros = []; 
 let sortState = { column: 'dataRegistro', direction: 'desc' };
 let todosOsGraficos = {};
 const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Filosofia", "Sociologia", "Linguagens"];
 
-// Roda quando a página carrega
+// 5. LÓGICA PRINCIPAL QUANDO A PÁGINA CARREGA
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("DOM Carregado. Iniciando a plataforma do aluno...");
     const alunoId = sessionStorage.getItem('alunoId');
     if (!alunoId) {
         alert("Sessão expirada. Por favor, faça o login novamente.");
@@ -37,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarNavegacao(alunoId);
     configurarFormulario(alunoId);
     configurarCabecalhosTabela();
+    configurarModalEdicao();
     
     const nomeAluno = sessionStorage.getItem('alunoNome');
     if (nomeAluno) { document.querySelector('.student-info h3').textContent = `Olá, ${nomeAluno}!`; }
@@ -44,23 +47,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     await carregarDadosIniciais(alunoId);
 });
 
+// 6. FUNÇÕES PRINCIPAIS
+
 async function carregarDadosIniciais(alunoId) {
     try {
-        console.log("Buscando dados do Firebase...");
         const q = query(collection(db, "registros"), where("alunoId", "==", alunoId));
         const querySnapshot = await getDocs(q);
         meusRegistros = []; 
-        querySnapshot.forEach((doc) => { meusRegistros.push(doc.data()); });
-        console.log(`Dados carregados: ${meusRegistros.length} registros encontrados.`);
+        querySnapshot.forEach((doc) => {
+            meusRegistros.push({ id: doc.id, ...doc.data() });
+        });
         renderizarHistorico(); 
     } catch (error) {
-        console.error("ERRO ao buscar dados iniciais: ", error);
-        alert("Não foi possível carregar seus dados. Verifique sua conexão e tente recarregar a página.");
+        console.error("Erro ao buscar dados iniciais: ", error);
+        alert("Não foi possível carregar seus dados.");
     }
 }
 
 function configurarNavegacao(alunoId) {
-    console.log("Configurando navegação...");
     const navItems = {
         registro: document.getElementById('nav-registro'),
         metricas: document.getElementById('nav-metricas'),
@@ -73,17 +77,11 @@ function configurarNavegacao(alunoId) {
     };
 
     function mudarAba(abaAtiva) {
-        console.log(`Mudando para a aba: ${abaAtiva}`);
-        Object.keys(sections).forEach(key => {
-            if (sections[key]) sections[key].classList.toggle('hidden', key !== abaAtiva);
-        });
-        Object.keys(navItems).forEach(key => {
-            if (navItems[key]) navItems[key].classList.remove('active');
-        });
-        if (navItems[abaAtiva]) navItems[abaAtiva].classList.add('active');
+        Object.keys(sections).forEach(key => sections[key]?.classList.toggle('hidden', key !== abaAtiva));
+        Object.keys(navItems).forEach(key => navItems[key]?.classList.remove('active'));
+        navItems[abaAtiva]?.classList.add('active');
 
         if (abaAtiva === 'metricas') {
-            console.log("Aba de Métricas ativada. Processando gráficos...");
             processarMetricas();
         }
     }
@@ -94,8 +92,6 @@ function configurarNavegacao(alunoId) {
                 e.preventDefault();
                 mudarAba(key);
             });
-        } else {
-            console.error(`ERRO: Elemento de navegação não encontrado para a chave: ${key}`);
         }
     });
 }
@@ -103,10 +99,12 @@ function configurarNavegacao(alunoId) {
 function configurarFormulario(alunoId) {
     const formRegistro = document.getElementById('form-registro');
     if (!formRegistro) return;
+
     formRegistro.addEventListener('submit', async (event) => {
         event.preventDefault();
         const novoRegistro = {
-            alunoId, materia: document.getElementById('materia').value,
+            alunoId,
+            materia: document.getElementById('materia').value,
             tempoEstudado: Number(document.getElementById('tempo').value),
             questoesFeitas: Number(document.getElementById('questoes').value),
             questoesAcertadas: Number(document.getElementById('acertos').value),
@@ -114,15 +112,13 @@ function configurarFormulario(alunoId) {
             dataRegistro: Timestamp.fromDate(new Date())
         };
         try {
-            console.log("Salvando novo registro...");
-            await addDoc(collection(db, "registros"), novoRegistro);
+            const docRef = await addDoc(collection(db, "registros"), novoRegistro);
             alert("Registro salvo com sucesso!");
             formRegistro.reset();
-            meusRegistros.push(novoRegistro);
+            meusRegistros.push({ id: docRef.id, ...novoRegistro });
             renderizarHistorico();
-            console.log("Registro salvo e tabela de histórico atualizada.");
         } catch (e) {
-            console.error("ERRO ao salvar registro: ", e);
+            console.error("Erro ao adicionar documento: ", e);
             alert("Ocorreu um erro ao salvar o registro.");
         }
     });
@@ -135,8 +131,7 @@ function configurarCabecalhosTabela() {
             if (!column) return;
             const direction = sortState.column === column && sortState.direction === 'desc' ? 'asc' : 'desc';
             sortState = { column, direction };
-            console.log(`Ordenando por '${column}' na direção '${direction}'`);
-            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => { th.classList.remove('active-sort'); });
+            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => th.classList.remove('active-sort'));
             header.classList.add('active-sort');
             renderizarHistorico();
         });
@@ -145,7 +140,7 @@ function configurarCabecalhosTabela() {
 
 function renderizarHistorico() {
     const tbody = document.querySelector('#tabela-historico tbody');
-    if (!tbody) { console.error("ERRO: O corpo da tabela de histórico (tbody) não foi encontrado."); return; }
+    if (!tbody) return;
     
     meusRegistros.sort((a, b) => {
         let valA = a[sortState.column]; let valB = b[sortState.column];
@@ -162,7 +157,7 @@ function renderizarHistorico() {
 
     tbody.innerHTML = ''; 
     if (meusRegistros.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum registro de estudo encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhum registro de estudo encontrado.</td></tr>';
         return;
     }
     
@@ -174,9 +169,96 @@ function renderizarHistorico() {
             <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td>
             <td>${reg.questoesFeitas || 0}</td><td>${reg.questoesAcertadas || 0}</td>
             <td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn edit-btn" data-id="${reg.id}" title="Editar">&#9998;</button>
+                    <button class="action-btn delete-btn" data-id="${reg.id}" title="Excluir">&#128465;</button>
+                </div>
+            </td>
         `;
         tbody.appendChild(tr);
     });
+
+    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', abrirModalDeEdicao));
+    document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', deletarRegistro));
+}
+
+function abrirModalDeEdicao(event) {
+    const docId = event.currentTarget.dataset.id;
+    const registroParaEditar = meusRegistros.find(r => r.id === docId);
+    if (!registroParaEditar) return;
+
+    document.getElementById('edit-doc-id').value = docId;
+    
+    const seletorMateria = document.getElementById('edit-materia');
+    seletorMateria.innerHTML = '';
+    TODAS_AS_MATERIAS.forEach(materia => {
+        const option = document.createElement('option');
+        option.value = materia;
+        option.textContent = materia;
+        seletorMateria.appendChild(option);
+    });
+    seletorMateria.value = registroParaEditar.materia;
+
+    document.getElementById('edit-tempo').value = registroParaEditar.tempoEstudado;
+    document.getElementById('edit-questoes').value = registroParaEditar.questoesFeitas;
+    document.getElementById('edit-acertos').value = registroParaEditar.questoesAcertadas;
+    document.getElementById('edit-flashcards').value = registroParaEditar.flashcardsFeitos;
+
+    document.getElementById('edit-modal-container').classList.remove('hidden');
+}
+
+function configurarModalEdicao() {
+    const modalContainer = document.getElementById('edit-modal-container');
+    const closeModalBtn = document.querySelector('.close-modal-btn');
+    const formEdicao = document.getElementById('form-edicao');
+
+    closeModalBtn.addEventListener('click', () => modalContainer.classList.add('hidden'));
+    modalContainer.addEventListener('click', (e) => {
+        if (e.target === modalContainer) modalContainer.classList.add('hidden');
+    });
+
+    formEdicao.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const docId = document.getElementById('edit-doc-id').value;
+        const dadosAtualizados = {
+            materia: document.getElementById('edit-materia').value,
+            tempoEstudado: Number(document.getElementById('edit-tempo').value),
+            questoesFeitas: Number(document.getElementById('edit-questoes').value),
+            questoesAcertadas: Number(document.getElementById('edit-acertos').value),
+            flashcardsFeitos: Number(document.getElementById('edit-flashcards').value),
+        };
+
+        try {
+            const docRef = doc(db, 'registros', docId);
+            await updateDoc(docRef, dadosAtualizados);
+            
+            const index = meusRegistros.findIndex(r => r.id === docId);
+            meusRegistros[index] = { ...meusRegistros[index], ...dadosAtualizados };
+
+            renderizarHistorico();
+            modalContainer.classList.add('hidden');
+            alert("Registro atualizado com sucesso!");
+        } catch (error) {
+            console.error("Erro ao atualizar o documento: ", error);
+            alert("Falha ao atualizar o registro.");
+        }
+    });
+}
+
+async function deletarRegistro(event) {
+    const docId = event.currentTarget.dataset.id;
+    if (confirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.")) {
+        try {
+            await deleteDoc(doc(db, "registros", docId));
+            meusRegistros = meusRegistros.filter(r => r.id !== docId);
+            renderizarHistorico();
+            alert("Registro excluído com sucesso.");
+        } catch (error) {
+            console.error("Erro ao excluir o documento: ", error);
+            alert("Falha ao excluir o registro.");
+        }
+    }
 }
 
 function processarMetricas() {

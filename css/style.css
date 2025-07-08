@@ -1,6 +1,6 @@
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: #f4f7f6; /* Um fundo cinza bem claro */
+    background-color: #f0f4f8; /* Um fundo cinza bem claro */
     margin: 0;
     display: flex;
     flex-direction: column; /* Organiza os itens em coluna (um em cima do outro) */
@@ -148,7 +148,7 @@ main {
 
 /* Efeito ao passar o mouse sobre o item do menu */
 .sidebar nav li a:hover {
-    background-color: #f4f7f6; /* Mesmo cinza do fundo */
+    background-color: #f0f4f8; /* Mesmo cinza do fundo */
     color: #007BFF;
 }
 
@@ -506,7 +506,7 @@ main {
 }
 
 #tabela-historico th.sortable:hover {
-    background-color: #f4f7f6;
+    background-color: #f0f4f8;
 }
 
 #tabela-historico th.active-sort {
@@ -528,4 +528,76 @@ main {
 #tabela-historico td {
     padding: 12px 15px;
     color: #555;
+}
+
+/* ========================================= */
+/* ESTILOS DA JANELA DE EDIÇÃO (MODAL)     */
+/* ========================================= */
+
+#edit-modal-container {
+    position: fixed; /* Fica fixo na tela */
+    z-index: 1000; /* Fica na frente de tudo */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semitransparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close-modal-btn {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-modal-btn:hover {
+    color: #000;
+}
+
+/* --- ESTILOS DOS BOTÕES DE AÇÃO NA TABELA --- */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: white;
+    font-weight: 500;
+    transition: opacity 0.2s ease;
+}
+.action-btn:hover {
+    opacity: 0.8;
+}
+
+.edit-btn {
+    background-color: #007BFF; /* Azul para editar */
+}
+
+.delete-btn {
+    background-color: #dc3545; /* Vermelho para excluir */
 }
