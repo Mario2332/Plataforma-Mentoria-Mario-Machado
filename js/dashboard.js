@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT DO DASHBOARD (VERSÃO FINAL COM DIAGNÓSTICO)
+// SCRIPT DO DASHBOARD (VERSÃO FINAL E COMPLETA)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -72,25 +72,22 @@ function configurarNavegacao(alunoId) {
         historico: document.getElementById('historico-estudos')
     };
 
-    // Função para mudar de aba
     function mudarAba(abaAtiva) {
         console.log(`Mudando para a aba: ${abaAtiva}`);
         Object.keys(sections).forEach(key => {
-            sections[key].classList.toggle('hidden', key !== abaAtiva);
+            if (sections[key]) sections[key].classList.toggle('hidden', key !== abaAtiva);
         });
         Object.keys(navItems).forEach(key => {
-            navItems[key].classList.toggle('active', key !== abaAtiva);
+            if (navItems[key]) navItems[key].classList.remove('active');
         });
-        navItems[abaAtiva].classList.add('active');
+        if (navItems[abaAtiva]) navItems[abaAtiva].classList.add('active');
 
-        // Lógica específica da aba
         if (abaAtiva === 'metricas') {
             console.log("Aba de Métricas ativada. Processando gráficos...");
             processarMetricas();
         }
     }
 
-    // Adiciona os eventos de clique
     Object.keys(navItems).forEach(key => {
         if(navItems[key]) {
             navItems[key].addEventListener('click', (e) => {
@@ -148,12 +145,8 @@ function configurarCabecalhosTabela() {
 
 function renderizarHistorico() {
     const tbody = document.querySelector('#tabela-historico tbody');
-    if (!tbody) {
-        console.error("ERRO: O corpo da tabela de histórico (tbody) não foi encontrado.");
-        return;
-    }
+    if (!tbody) { console.error("ERRO: O corpo da tabela de histórico (tbody) não foi encontrado."); return; }
     
-    // Ordena a lista de registros
     meusRegistros.sort((a, b) => {
         let valA = a[sortState.column]; let valB = b[sortState.column];
         if (sortState.column === 'desempenho') {
@@ -167,7 +160,7 @@ function renderizarHistorico() {
         return 0;
     });
 
-    tbody.innerHTML = '';
+    tbody.innerHTML = ''; 
     if (meusRegistros.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum registro de estudo encontrado.</td></tr>';
         return;
@@ -177,7 +170,11 @@ function renderizarHistorico() {
         const tr = document.createElement('tr');
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
-        tr.innerHTML = `<td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td><td>${reg.questoesFeitas || 0}</td><td>${reg.questoesAcertadas || 0}</td><td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>`;
+        tr.innerHTML = `
+            <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td>
+            <td>${reg.questoesFeitas || 0}</td><td>${reg.questoesAcertadas || 0}</td>
+            <td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>
+        `;
         tbody.appendChild(tr);
     });
 }
@@ -187,6 +184,7 @@ function processarMetricas() {
     let tempoTotal = 0, questoesTotal = 0, acertosTotal = 0;
     const contagemPorDia = {}, dadosPorMateria = {};
     TODAS_AS_MATERIAS.forEach(materia => { dadosPorMateria[materia] = { questoes: 0, acertos: 0, flashcards: 0 }; });
+
     meusRegistros.forEach(reg => {
         tempoTotal += reg.tempoEstudado || 0;
         questoesTotal += reg.questoesFeitas || 0;
@@ -231,28 +229,18 @@ function processarMetricas() {
         heatmapContainer.appendChild(diaElemento);
     }
     
-    // Recriar gráficos
-    const chartContexts = {
-        materias: document.getElementById('grafico-materias')?.getContext('2d'),
-        desempenho: document.getElementById('grafico-desempenho')?.getContext('2d'),
-        semanal: document.getElementById('grafico-semanal')?.getContext('2d'),
-        flashcards: document.getElementById('grafico-flashcards-materia')?.getContext('2d')
-    };
-
     const labelsMaterias = TODAS_AS_MATERIAS;
     const dadosQuestoes = labelsMaterias.map(m => dadosPorMateria[m].questoes);
     const dadosDesempenho = labelsMaterias.map(m => { const d = dadosPorMateria[m]; return d.questoes > 0 ? (d.acertos / d.questoes) * 100 : 0; });
     const dadosFlashcards = labelsMaterias.map(m => dadosPorMateria[m].flashcards);
+
+    // Destruir e recriar gráficos
+    Object.values(todosOsGraficos).forEach(grafico => grafico?.destroy());
+
+    todosOsGraficos.materias = new Chart(document.getElementById('grafico-materias'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Questões Feitas', data: dadosQuestoes, backgroundColor: 'rgba(54, 162, 235, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
+    todosOsGraficos.desempenho = new Chart(document.getElementById('grafico-desempenho'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Desempenho (%)', data: dadosDesempenho, backgroundColor: 'rgba(255, 206, 86, 0.7)' }] }, options: { scales: { y: { beginAtZero: true, max: 100 } } } });
+    todosOsGraficos.flashcards = new Chart(document.getElementById('grafico-flashcards-materia'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Flashcards Feitos', data: dadosFlashcards, backgroundColor: 'rgba(153, 102, 255, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
     
-    if (todosOsGraficos.materias) todosOsGraficos.materias.destroy();
-    if (chartContexts.materias) todosOsGraficos.materias = new Chart(chartContexts.materias, { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Questões Feitas', data: dadosQuestoes, backgroundColor: 'rgba(54, 162, 235, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
-
-    if (todosOsGraficos.desempenho) todosOsGraficos.desempenho.destroy();
-    if (chartContexts.desempenho) todosOsGraficos.desempenho = new Chart(chartContexts.desempenho, { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Desempenho (%)', data: dadosDesempenho, backgroundColor: 'rgba(255, 206, 86, 0.7)' }] }, options: { scales: { y: { beginAtZero: true, max: 100 } } } });
-
-    if (todosOsGraficos.flashcards) todosOsGraficos.flashcards.destroy();
-    if (chartContexts.flashcards) todosOsGraficos.flashcards = new Chart(chartContexts.flashcards, { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Flashcards Feitos', data: dadosFlashcards, backgroundColor: 'rgba(153, 102, 255, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
-
     const hojeFiltro = new Date();
     const seteDiasAtras = new Date();
     seteDiasAtras.setDate(hojeFiltro.getDate() - 6);
@@ -266,6 +254,5 @@ function processarMetricas() {
         dadosAcertosSemanais.push(acertosNoDia);
         dadosErrosSemanais.push(errosNoDia);
     }
-    if (todosOsGraficos.semanal) todosOsGraficos.semanal.destroy();
-    if(chartContexts.semanal) todosOsGraficos.semanal = new Chart(chartContexts.semanal, { type: 'line', data: { labels: labelsSemanais, datasets: [ { label: 'Acertos', data: dadosAcertosSemanais, borderColor: 'rgba(75, 192, 192, 1)', fill: true, tension: 0.1 }, { label: 'Erros', data: dadosErrosSemanais, borderColor: 'rgba(255, 99, 132, 1)', fill: true, tension: 0.1 } ] }, options: { scales: { y: { beginAtZero: true } } } });
+    todosOsGraficos.semanal = new Chart(document.getElementById('grafico-semanal'), { type: 'line', data: { labels: labelsSemanais, datasets: [ { label: 'Acertos', data: dadosAcertosSemanais, borderColor: 'rgba(75, 192, 192, 1)', fill: true, tension: 0.1 }, { label: 'Erros', data: dadosErrosSemanais, borderColor: 'rgba(255, 99, 132, 1)', fill: true, tension: 0.1 } ] }, options: { scales: { y: { beginAtZero: true } } } });
 }
