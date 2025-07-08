@@ -530,74 +530,48 @@ main {
     color: #555;
 }
 
-/* ========================================= */
-/* ESTILOS DA JANELA DE EDIÇÃO (MODAL)     */
-/* ========================================= */
+/* ========================================================= */
+/* ESTILOS PARA EDIÇÃO EM LINHA E AÇÕES NA TABELA      */
+/* ========================================================= */
 
-#edit-modal-container {
-    position: fixed; /* Fica fixo na tela */
-    z-index: 1000; /* Fica na frente de tudo */
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semitransparente */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-content {
-    background-color: #fff;
-    padding: 30px 40px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    width: 90%;
-    max-width: 500px;
-    position: relative;
-}
-
-.close-modal-btn {
-    color: #aaa;
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.close-modal-btn:hover {
-    color: #000;
-}
-
-/* --- ESTILOS DOS BOTÕES DE AÇÃO NA TABELA --- */
-.action-buttons {
+/* Faz a transição dos botões ser suave */
+#tabela-historico .action-buttons {
     display: flex;
     gap: 10px;
+    opacity: 0; /* Começam invisíveis */
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Quando o mouse passa sobre a LINHA, os botões ficam visíveis */
+#tabela-historico tbody tr:hover .action-buttons {
+    opacity: 1;
 }
 
 .action-btn {
     border: none;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
     color: white;
     font-weight: 500;
-    transition: opacity 0.2s ease;
-}
-.action-btn:hover {
-    opacity: 0.8;
 }
 
-.edit-btn {
-    background-color: #007BFF; /* Azul para editar */
-}
+.edit-btn { background-color: #007BFF; }
+.delete-btn { background-color: #dc3545; }
+.confirm-btn { background-color: #28a745; } /* Verde para confirmar */
+.cancel-btn { background-color: #6c757d; } /* Cinza para cancelar */
 
-.delete-btn {
-    background-color: #dc3545; /* Vermelho para excluir */
+
+/* Estilos para os campos de texto quando a linha está em modo de edição */
+.tabela-container input, .tabela-container select {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 14px;
+    border: 1px solid #007BFF;
+    border-radius: 4px;
+    box-sizing: border-box;
 }
