@@ -239,6 +239,7 @@ function processarMetricas() {
     document.getElementById('stat-tempo-total').textContent = `${tempoTotal} min`;
     document.getElementById('stat-questoes-total').textContent = questoesTotal;
     document.getElementById('stat-acertos-total').textContent = acertosTotal;
+    document.getElementById('stat-desempenho-geral').textContent = `${desempenhoGeral.toFixed(1)}%`;
     
     let sequenciaAtual = 0;
     let hoje = new Date();
