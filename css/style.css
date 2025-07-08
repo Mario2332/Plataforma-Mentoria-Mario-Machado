@@ -669,3 +669,54 @@ main {
 }
 .btn-cancel:hover { background-color: #dbe1e8; 
 }
+
+/* ========================================================= */
+/* ESTILOS MODERNOS PARA FORMULÁRIOS DENTRO DO MODAL     */
+/* ========================================================= */
+
+/* Aumenta um pouco a largura máxima do modal para dar mais espaço */
+.modal-content {
+    max-width: 500px;
+    padding: 35px 45px; /* Aumenta o padding geral do modal */
+}
+
+/* Adiciona espaço entre os campos do formulário */
+#modal-body .form-group {
+    margin-bottom: 20px; 
+}
+
+/* Estilo para os rótulos (Matéria, Tempo, etc.) */
+#modal-body label {
+    display: block;
+    margin-bottom: 8px; /* Aumenta o espaço abaixo do rótulo */
+    color: #374151;    /* Um cinza mais escuro e profissional */
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Estilo principal para os campos de input e select */
+#modal-body input[type="number"],
+#modal-body select {
+    width: 100%;
+    padding: 12px 15px; /* Aumenta o preenchimento interno para um toque mais "arejado" */
+    font-size: 16px;
+    border: 1px solid #d1d5db; /* Borda cinza clara */
+    border-radius: 8px;        /* Bordas mais arredondadas */
+    box-sizing: border-box;
+    background-color: #f9fafb; /* Fundo muito sutilmente acinzentado */
+    color: #111827;            /* Cor do texto escura */
+    transition: all 0.2s ease-in-out; /* Transição suave para foco */
+}
+
+/* Efeito visual quando o campo está em foco (sendo usado) */
+#modal-body input[type="number"]:focus,
+#modal-body select:focus {
+    border-color: #007bff; /* Cor da borda fica azul */
+    outline: none;         /* Remove a linha de foco padrão e feia do navegador */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); /* Adiciona um brilho azul sutil */
+}
+
+/* Ajuste final nos botões dentro do modal para mais espaço */
+#modal-body .modal-buttons {
+    margin-top: 10px; /* Reduz a margem superior se o último elemento for um form-group */
+}
