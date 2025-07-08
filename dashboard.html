@@ -25,6 +25,7 @@
             <ul>
                 <li id="nav-registro" class="active"><a href="#">Registro de Estudos</a></li>
                 <li id="nav-metricas"><a href="#">Minhas Métricas</a></li>
+                <li id="nav-historico"><a href="#">Histórico de estudos</a></li>
             </ul>
         </nav>
     </aside>
@@ -47,12 +48,7 @@
                         <option value="Filosofia">Filosofia</option>
                         <option value="Sociologia">Sociologia</option>
                         <option value="Linguagens">Linguagens</option>
-                        <option value="Outra">Outra</option>
                     </select>
-                </div>
-                <div class="form-group hidden" id="outra-materia-container">
-                    <label for="outra-materia">Qual matéria?</label>
-                    <input type="text" id="outra-materia" name="outra-materia" placeholder="Digite o nome da matéria">
                 </div>
                 <div class="form-group">
                     <label for="tempo">Tempo de estudo (minutos):</label>
@@ -147,6 +143,27 @@
 
     </div>
 </section>
+
+    <section id="historico-estudos" class="hidden">
+        <h2>Histórico de Estudos</h2>
+        <div class="tabela-container">
+            <table id="tabela-historico">
+                <thead>
+                    <tr>
+                        <th data-sort="dataRegistro" class="sortable active-sort desc">Data &#x2195;</th>
+                        <th data-sort="materia" class="sortable">Matéria &#x2195;</th>
+                        <th data-sort="tempoEstudado" class="sortable">Tempo (min) &#x2195;</th>
+                        <th data-sort="questoesFeitas" class="sortable">Questões &#x2195;</th>
+                        <th data-sort="questoesAcertadas" class="sortable">Acertos &#x2195;</th>
+                        <th data-sort="desempenho" class="sortable">Desempenho &#x2195;</th>
+                        <th data-sort="flashcardsFeitos" class="sortable">Flashcards &#x2195;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </section>
 
     </main>
 

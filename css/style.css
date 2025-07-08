@@ -469,3 +469,63 @@ main {
     color: #007BFF;
     margin: 0;
 }
+
+    /* ========================================= */
+/* ESTILOS DA TABELA DE HISTÓRICO          */
+/* ========================================= */
+
+.tabela-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06);
+    border: 1px solid #e9edf2;
+    overflow-x: auto; /* Adiciona scroll horizontal em telas pequenas */
+}
+
+#tabela-historico {
+    width: 100%;
+    border-collapse: collapse; /* Une as bordas das células */
+    font-size: 14px;
+}
+
+#tabela-historico thead tr {
+    border-bottom: 2px solid #e0e0e0;
+}
+
+#tabela-historico th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+}
+
+#tabela-historico th.sortable {
+    cursor: pointer;
+    user-select: none; /* Impede que o texto seja selecionado ao clicar */
+}
+
+#tabela-historico th.sortable:hover {
+    background-color: #f4f7f6;
+}
+
+#tabela-historico th.active-sort {
+    color: #007BFF;
+}
+
+#tabela-historico tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#tabela-historico tbody tr:last-child {
+    border-bottom: none;
+}
+
+#tabela-historico tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+#tabela-historico td {
+    padding: 12px 15px;
+    color: #555;
+}
