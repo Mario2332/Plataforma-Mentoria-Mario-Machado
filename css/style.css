@@ -181,6 +181,7 @@ body.dashboard-body {
 
 /* O Grid de Métricas Visuais */
 .metricas-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 30px; width: 100%; }
+/* --- ATRIBUIÇÃO CORRETA DE TODOS OS ITENS AO GRID --- */
 .metricas-grid .grid-item {
     &#coluna-stats { grid-column: 1 / 2; grid-row: 1 / 1; display: flex; flex-direction: column; gap: 20px; }
     &#coluna-heatmap { grid-column: 2 / 5; grid-row: 1 / 1; }
@@ -189,6 +190,11 @@ body.dashboard-body {
     &#item-desempenho-materia { grid-column: 4 / 7; grid-row: 2 / 2; }
     &#item-questoes-materia { grid-column: 1 / 4; grid-row: 3 / 3; }
     &#item-flashcards-materia { grid-column: 4 / 7; grid-row: 3 / 3; }
+
+    /* NOVOS ITENS */
+    &#item-tempo-diario { grid-column: 1 / -1; grid-row: 4 / 5; } /* Ocupa a linha toda */
+    &#item-tempo-materia { grid-column: 1 / 4; grid-row: 5 / 6; }
+    &#item-tempo-area { grid-column: 4 / 7; grid-row: 5 / 6; }
 }
 
 /* Cards, Contêineres, Heatmap, Gráficos */
@@ -354,4 +360,142 @@ th.active-sort { color: #007BFF; }
     outline: none;
     border-color: #007BFF;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* --- ESTILOS PARA FILTROS DE GRÁFICO --- */
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chart-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1c3d5a;
+    text-align: left;
+}
+
+.filtro-container {
+    position: relative;
+}
+
+.filtro-btn {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    color: #374151;
+}
+
+.filtro-dropdown {
+    position: absolute;
+    top: 105%;
+    right: 0;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
+    z-index: 10;
+    padding: 8px;
+    width: 170px;
+}
+
+.filtro-dropdown a {
+    display: block;
+    padding: 10px 12px;
+    text-decoration: none;
+    color: #374151;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.filtro-dropdown a:hover {
+    background-color: #f3f4f6;
+}
+
+/* --- SEÇÃO DE ANÁLISE (PONTOS FORTES E A MELHORAR) --- */
+#sub-page-pontos {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.bloco-analise {
+    border: 1px solid #e9edf2;
+    border-radius: 12px;
+    background-color: #ffffff; 
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06);
+}
+
+.bloco-analise summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; 
+    padding: 20px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1c3d5a;
+    cursor: pointer;
+    background-color: #f8f9fa; 
+    list-style: none; /* Remove o marcador padrão */
+}
+
+/* Remove o marcador padrão em todos os navegadores */
+.bloco-analise summary::-webkit-details-marker {
+    display: none;
+}
+
+.bloco-analise summary::before {
+    content: '›'; 
+    font-size: 24px;
+    font-weight: bold;
+    margin-right: 15px;
+    transform: rotate(0deg);
+    transition: transform 0.2s ease-in-out;
+}
+
+.bloco-analise[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.bloco-analise .tabela-container {
+    padding: 0 20px 20px 20px;
+    border-top: 1px solid #e9edf2;
+}
+
+.info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    stroke: #6b7280;
+}
+
+.tabela-analise {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.tabela-analise th, .tabela-analise td {
+    padding: 12px 15px;
+    text-align: left;
+}
+.tabela-analise thead tr {
+    border-bottom: 2px solid #e0e0e0;
+}
+.tabela-analise th {
+    font-weight: 600;
+    color: #333;
+}
+.tabela-analise tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+.tabela-analise tbody tr:last-child {
+    border-bottom: none;
 }

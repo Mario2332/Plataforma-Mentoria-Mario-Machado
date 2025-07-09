@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT DO DASHBOARD (COM CRONÔMETRO FUNCIONAL E CORRIGIDO)
+// SCRIPT DO DASHBOARD (COM NOVOS GRÁFICOS DE TEMPO E ANÁLISE)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -18,16 +18,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Variáveis Globais
+// --- VARIÁVEIS GLOBAIS E CONSTANTES ---
 let meusRegistros = []; 
+let todosOsGraficos = {};
+const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Filosofia", "Sociologia", "Linguagens", "Redação"];
+
+// Mapeamento e cores para o gráfico de pizza
+const MAPA_DE_AREAS = {
+    "Matemática": "Matemática", "Física": "Ciências da Natureza", "Química": "Ciências da Natureza", "Biologia": "Ciências da Natureza",
+    "História": "Ciências Humanas", "Geografia": "Ciências Humanas", "Filosofia": "Ciências Humanas", "Sociologia": "Ciências Humanas",
+    "Linguagens": "Linguagens", "Redação": "Redação"
+};
+const CORES_AREAS = { "Matemática": "#3498db", "Ciências da Natureza": "#2ecc71", "Ciências Humanas": "#f1c40f", "Linguagens": "#9b59b6", "Redação": "#e74c3c" };
+
+// Estado dos filtros e ordenação
 let sortStateHistorico = { column: 'dataRegistro', direction: 'desc' };
 let sortStateMelhorar = { column: 'desempenho', direction: 'asc' };
 let sortStateFortes = { column: 'desempenho', direction: 'desc' };
-const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Filosofia", "Sociologia", "Linguagens"];
-let todosOsGraficos = {};
-const pluginTextoNoCentro = { id: 'text-center', afterDatasetsDraw(chart) { const { ctx, data } = chart; const text = data.datasets[0].text; if (!text) return; ctx.save(); const x = chart.getDatasetMeta(0).data[0].x; const y = chart.getDatasetMeta(0).data[0].y; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = '#1c3d5a'; ctx.fillText(text, x, y); ctx.restore(); } };
+let filtroTempoDiario = '14d', filtroTempoMateria = 'total', filtroTempoArea = 'total';
+
+// Variáveis do Cronômetro
 let cronometroInterval, tempoEmSegundos = 0, cronometroAtivo = false;
 
+// Plugin do Gráfico de Rosca
+const pluginTextoNoCentro = { id: 'text-center', afterDatasetsDraw(chart) { const { ctx, data } = chart; const text = data.datasets[0].text; if (!text) return; ctx.save(); const x = chart.getDatasetMeta(0).data[0].x; const y = chart.getDatasetMeta(0).data[0].y; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = '#1c3d5a'; ctx.fillText(text, x, y); ctx.restore(); } };
+
+// --- FUNÇÕES DE INICIALIZAÇÃO ---
 
 function normalizeString(str) {
     if (!str) return '';
@@ -38,11 +54,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const alunoId = sessionStorage.getItem('alunoId');
     if (!alunoId) { window.location.href = 'index.html'; return; }
     
-    configurarNavegacao(alunoId);
+    configurarNavegacao();
     configurarFormulario(alunoId);
     configurarTabelasOrdenaveis();
     configurarModalPrincipal();
     configurarCronometro(alunoId);
+    configurarFiltrosGraficos();
     
     const nomeAluno = sessionStorage.getItem('alunoNome');
     if (nomeAluno) { document.querySelector('.student-info h3').textContent = `Olá, ${nomeAluno}!`; }
@@ -58,14 +75,15 @@ async function carregarDadosIniciais(alunoId) {
         querySnapshot.forEach((doc) => {
             meusRegistros.push({ id: doc.id, ...doc.data() });
         });
-        renderizarHistorico(); 
+        renderizarHistorico();
+        // Dispara o clique na aba de métricas para carregar os gráficos iniciais
+        document.getElementById('btn-subnav-metricas').click();
     } catch (error) { console.error("Erro ao buscar dados iniciais: ", error); }
 }
 
 function configurarNavegacao() {
     const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico'), cronometro: document.getElementById('nav-cronometro') };
     const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos'), cronometro: document.getElementById('cronometro-estudos') };
-    
     const btnSubNavMetricas = document.getElementById('btn-subnav-metricas');
     const btnSubNavPontos = document.getElementById('btn-subnav-pontos');
     const pageMetricas = document.getElementById('sub-page-metricas');
@@ -161,8 +179,7 @@ function configurarTabelasOrdenaveis() {
 function renderizarHistorico() {
     const tbody = document.querySelector('#tabela-historico tbody');
     if (!tbody) return;
-    
-    // Ordena uma cópia dos registros para não afetar a ordem original ao salvar
+
     const registrosOrdenados = [...meusRegistros].sort((a, b) => {
         let valA = a[sortStateHistorico.column]; 
         let valB = b[sortStateHistorico.column];
@@ -188,7 +205,6 @@ function renderizarHistorico() {
 
     registrosOrdenados.forEach((reg) => {
         const tr = document.createElement('tr');
-        // Guarda o ID do documento na linha da tabela para fácil acesso
         tr.dataset.id = reg.id; 
         
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
@@ -208,15 +224,14 @@ function renderizarHistorico() {
                     <button class="action-btn edit-btn" title="Editar">✏️</button>
                     <button class="action-btn delete-btn" title="Excluir">🗑️</button>
                 </div>
-            </td>`;
+            </td>
+        `;
         tbody.appendChild(tr);
     });
 
-    // Adiciona os eventos aos novos botões
     tbody.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', abrirFormularioEdicao));
     tbody.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', deletarRegistro));
     
-    // Atualiza o visual dos cabeçalhos
     document.querySelectorAll('#tabela-historico th.sortable').forEach(th => {
         th.classList.remove('active-sort');
         if (th.dataset.sort === sortStateHistorico.column) {
@@ -305,7 +320,10 @@ async function deletarRegistro(event) {
             await deleteDoc(doc(db, "registros", docId));
             meusRegistros = meusRegistros.filter(r => r.id !== docId);
             renderizarHistorico();
-            processarMetricas();
+            // Se a aba de métricas estiver ativa, atualiza os gráficos
+            if(!document.getElementById('minhas-metricas').classList.contains('hidden')) {
+                processarMetricas();
+            }
             showCustomAlert("Registro excluído com sucesso.");
         } catch (error) { 
             console.error("Erro ao excluir o documento:", error);
@@ -336,9 +354,9 @@ function hideCustomModal() {
     document.getElementById('main-modal').classList.add('hidden');
 }
 
-function showCustomAlert(message) {
+function showCustomAlert(message, type = 'sucesso') {
     const alertHTML = `
-        <h3>Aviso</h3>
+        <h3 style="color: ${type === 'erro' ? '#dc3545' : '#1c3d5a'}">Aviso</h3>
         <p>${message}</p>
         <div class="modal-buttons">
             <button class="modal-btn btn-cancel">OK</button>
@@ -377,12 +395,15 @@ function processarMetricas() {
             <div class="grid-item" id="item-desempenho-materia"><div class="chart-container"><h3>Desempenho (%) por Matéria</h3><canvas id="grafico-desempenho"></canvas></div></div>
             <div class="grid-item" id="item-questoes-materia"><div class="chart-container"><h3>Questões Feitas por Matéria</h3><canvas id="grafico-materias"></canvas></div></div>
             <div class="grid-item" id="item-flashcards-materia"><div class="chart-container"><h3>Flashcards Feitos por Matéria</h3><canvas id="grafico-flashcards-materia"></canvas></div></div>
+            <div class="grid-item" id="item-tempo-diario"><div class="chart-container"><div class="chart-header"><h3>Tempo de Estudo por Dia</h3><div class="filtro-container"><button class="filtro-btn" data-filtro-id="filtro-tempo-diario">14 dias ▾</button><div id="filtro-tempo-diario" class="filtro-dropdown hidden"><a href="#" data-periodo="7d">7 dias</a><a href="#" data-periodo="14d">14 dias</a><a href="#" data-periodo="30d">30 dias</a></div></div></div><canvas id="grafico-tempo-diario"></canvas></div></div>
+            <div class="grid-item" id="item-tempo-materia"><div class="chart-container"><div class="chart-header"><h3>Tempo por Matéria (min)</h3><div class="filtro-container"><button class="filtro-btn" data-filtro-id="filtro-tempo-materia">Total ▾</button><div id="filtro-tempo-materia" class="filtro-dropdown hidden"><a href="#" data-periodo="total">Desde o início</a><a href="#" data-periodo="12m">12 meses</a><a href="#" data-periodo="ano">Ano atual</a><a href="#" data-periodo="30d">30 dias</a><a href="#" data-periodo="7d">7 dias</a></div></div></div><canvas id="grafico-tempo-materia"></canvas></div></div>
+            <div class="grid-item" id="item-tempo-area"><div class="chart-container"><div class="chart-header"><h3>Tempo por Área (%)</h3><div class="filtro-container"><button class="filtro-btn" data-filtro-id="filtro-tempo-area">Total ▾</button><div id="filtro-tempo-area" class="filtro-dropdown hidden"><a href="#" data-periodo="total">Desde o início</a><a href="#" data-periodo="12m">12 meses</a><a href="#" data-periodo="ano">Ano atual</a><a href="#" data-periodo="30d">30 dias</a><a href="#" data-periodo="7d">7 dias</a></div></div></div><canvas id="grafico-tempo-area"></canvas></div></div>
         `;
     }
 
     let tempoTotal = 0, questoesTotal = 0, acertosTotal = 0;
     const contagemPorDia = {}, dadosPorMateria = {};
-    TODAS_AS_MATERIAS.forEach(materia => { dadosPorMateria[materia] = { questoes: 0, acertos: 0, flashcards: 0 }; });
+    TODAS_AS_MATERIAS.forEach(materia => { dadosPorMateria[materia] = { questoes: 0, acertos: 0, flashcards: 0, tempo: 0 }; });
 
     meusRegistros.forEach(reg => {
         tempoTotal += reg.tempoEstudado || 0;
@@ -394,6 +415,7 @@ function processarMetricas() {
             dadosPorMateria[reg.materia].questoes += reg.questoesFeitas || 0;
             dadosPorMateria[reg.materia].acertos += reg.questoesAcertadas || 0;
             dadosPorMateria[reg.materia].flashcards += (reg.flashcardsFeitos || 0);
+            dadosPorMateria[reg.materia].tempo += (reg.tempoEstudado || 0);
         }
     });
 
@@ -428,31 +450,52 @@ function processarMetricas() {
     }
     
     Object.values(todosOsGraficos).forEach(grafico => grafico?.destroy());
-
     const labelsMaterias = TODAS_AS_MATERIAS;
-    const dadosQuestoes = labelsMaterias.map(m => dadosPorMateria[m].questoes);
-    const dadosDesempenho = labelsMaterias.map(m => { const d = dadosPorMateria[m]; return d.questoes > 0 ? (d.acertos / d.questoes) * 100 : 0; });
-    const dadosFlashcards = labelsMaterias.map(m => dadosPorMateria[m].flashcards);
     
+    // Gráficos de barra
+    todosOsGraficos.materias = new Chart(document.getElementById('grafico-materias'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Questões Feitas', data: labelsMaterias.map(m => dadosPorMateria[m].questoes), backgroundColor: 'rgba(54, 162, 235, 0.7)' }] }});
+    todosOsGraficos.desempenho = new Chart(document.getElementById('grafico-desempenho'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Desempenho (%)', data: labelsMaterias.map(m => { const d = dadosPorMateria[m]; return d.questoes > 0 ? (d.acertos / d.questoes) * 100 : 0; }), backgroundColor: 'rgba(255, 206, 86, 0.7)' }] }, options: { scales: { y: { max: 100 } } } });
+    todosOsGraficos.flashcards = new Chart(document.getElementById('grafico-flashcards-materia'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Flashcards Feitos', data: labelsMaterias.map(m => dadosPorMateria[m].flashcards), backgroundColor: 'rgba(153, 102, 255, 0.7)' }] }});
+    
+    // Gráfico de Rosca
     todosOsGraficos.donut = new Chart(document.getElementById('grafico-desempenho-geral'), { type: 'doughnut', data: { datasets: [{ data: [desempenhoGeral, 100 - desempenhoGeral], backgroundColor: ['#007BFF', '#e9edf2'], borderWidth: 0, text: `${desempenhoGeral.toFixed(0)}%` }] }, options: { responsive: true, cutout: '75%', plugins: { legend: { display: false } } }, plugins: [pluginTextoNoCentro] });
-    todosOsGraficos.materias = new Chart(document.getElementById('grafico-materias'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Questões Feitas', data: dadosQuestoes, backgroundColor: 'rgba(54, 162, 235, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
-    todosOsGraficos.desempenho = new Chart(document.getElementById('grafico-desempenho'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Desempenho (%)', data: dadosDesempenho, backgroundColor: 'rgba(255, 206, 86, 0.7)' }] }, options: { scales: { y: { beginAtZero: true, max: 100 } } } });
-    todosOsGraficos.flashcards = new Chart(document.getElementById('grafico-flashcards-materia'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Flashcards Feitos', data: dadosFlashcards, backgroundColor: 'rgba(153, 102, 255, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
-    
-    const hojeFiltro = new Date();
-    const seteDiasAtras = new Date();
-    seteDiasAtras.setDate(hojeFiltro.getDate() - 6);
-    const registrosDaSemana = meusRegistros.filter(reg => reg.dataRegistro?.toDate() >= seteDiasAtras);
-    const labelsSemanais = [], dadosAcertosSemanais = [], dadosErrosSemanais = [];
-    for (let i = 0; i < 7; i++) {
-        const dia = new Date(seteDiasAtras); dia.setDate(dia.getDate() + i);
-        labelsSemanais.push(String(dia.getDate()).padStart(2, '0') + '/' + String(dia.getMonth() + 1).padStart(2, '0'));
-        let acertosNoDia = 0, errosNoDia = 0;
-        registrosDaSemana.forEach(reg => { if (reg.dataRegistro?.toDate().toDateString() === dia.toDateString()) { acertosNoDia += reg.questoesAcertadas; errosNoDia += reg.questoesFeitas - reg.questoesAcertadas; } });
-        dadosAcertosSemanais.push(acertosNoDia);
-        dadosErrosSemanais.push(errosNoDia);
+
+    // --- NOVOS GRÁFICOS DE TEMPO ---
+    const registrosTempoDiario = filtrarRegistrosPorPeriodo(filtroTempoDiario);
+    const dadosTempoDiario = {};
+    const labelsTempoDiario = [];
+    const hojeData = new Date();
+    const diasNoFiltro = parseInt(filtroTempoDiario.replace('d', ''));
+    for (let i = diasNoFiltro - 1; i >= 0; i--) {
+        const data = new Date();
+        data.setDate(hojeData.getDate() - i);
+        const dataFormatada = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        labelsTempoDiario.push(dataFormatada);
+        dadosTempoDiario[dataFormatada] = 0;
     }
-    todosOsGraficos.semanal = new Chart(document.getElementById('grafico-semanal'), { type: 'line', data: { labels: labelsSemanais, datasets: [ { label: 'Acertos', data: dadosAcertosSemanais, borderColor: 'rgba(75, 192, 192, 1)', fill: true, tension: 0.1 }, { label: 'Erros', data: dadosErrosSemanais, borderColor: 'rgba(255, 99, 132, 1)', fill: true, tension: 0.1 } ] }, options: { scales: { y: { beginAtZero: true } } } });
+    registrosTempoDiario.forEach(reg => {
+        const dataFormatada = reg.dataRegistro.toDate().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        if (dadosTempoDiario.hasOwnProperty(dataFormatada)) {
+            dadosTempoDiario[dataFormatada] += reg.tempoEstudado || 0;
+        }
+    });
+    todosOsGraficos.tempoDiario = new Chart(document.getElementById('grafico-tempo-diario'), { type: 'bar', data: { labels: labelsTempoDiario, datasets: [{ label: 'Minutos Estudados', data: Object.values(dadosTempoDiario), backgroundColor: 'rgba(0, 123, 255, 0.7)' }] } });
+
+    const registrosTempoMateria = filtrarRegistrosPorPeriodo(filtroTempoMateria);
+    const dadosTempoPorMateria = {};
+    TODAS_AS_MATERIAS.forEach(m => { dadosTempoPorMateria[m] = 0; });
+    registrosTempoMateria.forEach(reg => {
+        if (dadosTempoPorMateria.hasOwnProperty(reg.materia)) { dadosTempoPorMateria[reg.materia] += reg.tempoEstudado || 0; }
+    });
+    todosOsGraficos.tempoMateria = new Chart(document.getElementById('grafico-tempo-materia'), { type: 'bar', data: { labels: TODAS_AS_MATERIAS, datasets: [{ label: 'Tempo Total (min)', data: Object.values(dadosTempoPorMateria), backgroundColor: 'rgba(75, 192, 192, 0.7)' }] } });
+
+    const registrosTempoArea = filtrarRegistrosPorPeriodo(filtroTempoArea);
+    const dadosTempoPorArea = { "Matemática": 0, "Ciências da Natureza": 0, "Ciências Humanas": 0, "Linguagens": 0, "Redação": 0 };
+    registrosTempoArea.forEach(reg => {
+        const area = MAPA_DE_AREAS[reg.materia];
+        if (area) { dadosTempoPorArea[area] += reg.tempoEstudado || 0; }
+    });
+    todosOsGraficos.tempoArea = new Chart(document.getElementById('grafico-tempo-area'), { type: 'pie', data: { labels: Object.keys(dadosTempoPorArea), datasets: [{ data: Object.values(dadosTempoPorArea), backgroundColor: Object.values(CORES_AREAS) }] }, options: { responsive: true, maintainAspectRatio: false } });
 }
 
 function processarAnalisePontos() {
@@ -461,10 +504,7 @@ function processarAnalisePontos() {
         if (!reg.conteudo || !reg.questoesFeitas || reg.questoesFeitas === 0) return;
         const chave = normalizeString(reg.conteudo);
         if (!dadosPorConteudo[chave]) {
-            dadosPorConteudo[chave] = {
-                conteudoOriginal: reg.conteudo, materia: reg.materia,
-                questoes: 0, acertos: 0, ultimaData: new Date(0)
-            };
+            dadosPorConteudo[chave] = { conteudoOriginal: reg.conteudo, materia: reg.materia, questoes: 0, acertos: 0, ultimaData: new Date(0) };
         }
         dadosPorConteudo[chave].questoes += reg.questoesFeitas;
         dadosPorConteudo[chave].acertos += reg.questoesAcertadas;
@@ -473,7 +513,6 @@ function processarAnalisePontos() {
             dadosPorConteudo[chave].ultimaData = dataRegistro;
         }
     });
-
     const pontosAMelhorar = [], pontosFortes = [];
     Object.values(dadosPorConteudo).forEach(dado => {
         const desempenho = (dado.acertos / dado.questoes) * 100;
@@ -481,7 +520,6 @@ function processarAnalisePontos() {
         if (desempenho < 50) pontosAMelhorar.push(item);
         else if (desempenho >= 80) pontosFortes.push(item);
     });
-    
     renderizarTabelaAnalise('container-pontos-melhorar', pontosAMelhorar, sortStateMelhorar);
     renderizarTabelaAnalise('container-pontos-fortes', pontosFortes, sortStateFortes);
 }
@@ -489,7 +527,6 @@ function processarAnalisePontos() {
 function renderizarTabelaAnalise(containerId, dados, sortState) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    
     dados.sort((a, b) => {
         let valA = a[sortState.column]; let valB = b[sortState.column];
         if(valA?.toDate) valA = valA.toDate();
@@ -498,27 +535,12 @@ function renderizarTabelaAnalise(containerId, dados, sortState) {
         if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
         return 0;
     });
-
     if (dados.length === 0) {
         container.innerHTML = '<p style="padding: 20px 0;">Nenhum conteúdo encontrado para esta categoria.</p>';
         return;
     }
-
-    let headers = `
-        <th class="sortable" data-sort="materia">Matéria</th>
-        <th class="sortable" data-sort="conteudoOriginal">Conteúdo</th>
-        <th class="sortable" data-sort="questoes">Questões</th>
-        <th class="sortable" data-sort="acertos">Acertos</th>
-        <th class="sortable" data-sort="desempenho">Desempenho</th>
-        <th class="sortable" data-sort="ultimaData">Último Registro</th>`;
-
-    container.innerHTML = `<table class="tabela-analise">
-        <thead><tr>${headers}</tr></thead>
-        <tbody>
-            ${dados.map(d => `<tr><td>${d.materia}</td><td>${d.conteudoOriginal}</td><td>${d.questoes}</td><td>${d.acertos}</td><td>${d.desempenho.toFixed(1)}%</td><td>${d.ultimaData.toLocaleDateString('pt-br')}</td></tr>`).join('')}
-        </tbody>
-    </table>`;
-    
+    let headers = `<th class="sortable" data-sort="materia">Matéria</th><th class="sortable" data-sort="conteudoOriginal">Conteúdo</th><th class="sortable" data-sort="questoes">Questões</th><th class="sortable" data-sort="acertos">Acertos</th><th class="sortable" data-sort="desempenho">Desempenho</th><th class="sortable" data-sort="ultimaData">Último Registro</th>`;
+    container.innerHTML = `<table class="tabela-analise"><thead><tr>${headers}</tr></thead><tbody>${dados.map(d => `<tr><td>${d.materia}</td><td>${d.conteudoOriginal}</td><td>${d.questoes}</td><td>${d.acertos}</td><td>${d.desempenho.toFixed(1)}%</td><td>${d.ultimaData.toLocaleDateString('pt-br')}</td></tr>`).join('')}</tbody></table>`;
     container.querySelectorAll('th.sortable').forEach(th => {
         if (th.dataset.sort === sortState.column) {
             th.classList.add('active-sort');
@@ -527,65 +549,21 @@ function renderizarTabelaAnalise(containerId, dados, sortState) {
 }
 
 function configurarCronometro(alunoId) {
-    const btnStart = document.getElementById('btn-start');
-    const btnPause = document.getElementById('btn-pause');
-    const btnReset = document.getElementById('btn-reset');
-    const btnSalvar = document.getElementById('btn-salvar-cronometro');
-    const formCronometro = document.getElementById('form-cronometro');
-
+    const btnStart = document.getElementById('btn-start'), btnPause = document.getElementById('btn-pause'), btnReset = document.getElementById('btn-reset'), btnSalvar = document.getElementById('btn-salvar-cronometro'), formCronometro = document.getElementById('form-cronometro');
     if(!btnStart || !btnPause || !btnReset || !btnSalvar || !formCronometro) return;
-
-    btnStart.addEventListener('click', () => {
-        if (cronometroAtivo) return;
-        cronometroAtivo = true;
-        btnStart.disabled = true;
-        btnPause.disabled = false;
-        cronometroInterval = setInterval(() => {
-            tempoEmSegundos++;
-            atualizarDisplayCronometro();
-        }, 1000);
-    });
-
-    btnPause.addEventListener('click', () => {
-        clearInterval(cronometroInterval);
-        cronometroAtivo = false;
-        btnStart.disabled = false;
-        btnPause.disabled = true;
-    });
-
-    btnReset.addEventListener('click', () => {
-        clearInterval(cronometroInterval);
-        cronometroAtivo = false;
-        tempoEmSegundos = 0;
-        atualizarDisplayCronometro();
-        btnStart.disabled = false;
-        btnPause.disabled = true;
-    });
-
+    btnStart.addEventListener('click', () => { if (cronometroAtivo) return; cronometroAtivo = true; btnStart.disabled = true; btnPause.disabled = false; cronometroInterval = setInterval(() => { tempoEmSegundos++; atualizarDisplayCronometro(); }, 1000); });
+    btnPause.addEventListener('click', () => { clearInterval(cronometroInterval); cronometroAtivo = false; btnStart.disabled = false; btnPause.disabled = true; });
+    btnReset.addEventListener('click', () => { clearInterval(cronometroInterval); cronometroAtivo = false; tempoEmSegundos = 0; atualizarDisplayCronometro(); btnStart.disabled = false; btnPause.disabled = true; });
     btnSalvar.addEventListener('click', async () => {
         clearInterval(cronometroInterval);
         cronometroAtivo = false;
-
         const materiaSelecionada = document.getElementById('cronometro-materia').value;
-        if (!materiaSelecionada) {
-            showCustomAlert("Por favor, selecione a matéria antes de salvar.", "erro");
-            return;
-        }
-        if (tempoEmSegundos < 60 && tempoEmSegundos > 0) {
-            showCustomAlert("Sessões com menos de 1 minuto não são salvas. Continue estudando!", "info");
-            return;
-        }
-        if (tempoEmSegundos === 0) {
-             showCustomAlert("Inicie o cronômetro para registrar uma sessão.", "erro");
-            return;
-        }
+        if (!materiaSelecionada) { showCustomAlert("Por favor, selecione a matéria antes de salvar.", "erro"); return; }
+        if (tempoEmSegundos < 60 && tempoEmSegundos > 0) { showCustomAlert("Sessões com menos de 1 minuto não são salvas. Continue estudando!", "info"); return; }
+        if (tempoEmSegundos === 0) { showCustomAlert("Inicie o cronômetro para registrar uma sessão.", "erro"); return; }
         const tempoFinalEmMinutos = Math.round(tempoEmSegundos / 60);
-        
         const novoRegistro = {
-            alunoId,
-            materia: materiaSelecionada,
-            conteudo: document.getElementById('cronometro-conteudo').value,
-            tempoEstudado: tempoFinalEmMinutos,
+            alunoId, materia: materiaSelecionada, conteudo: document.getElementById('cronometro-conteudo').value, tempoEstudado: tempoFinalEmMinutos,
             questoesFeitas: Number(document.getElementById('cronometro-questoes').value) || 0,
             questoesAcertadas: Number(document.getElementById('cronometro-acertos').value) || 0,
             flashcardsFeitos: Number(document.getElementById('cronometro-flashcards').value) || 0,

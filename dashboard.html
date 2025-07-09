@@ -24,7 +24,7 @@
                     <li id="nav-registro" class="active"><a href="#">Registro de Estudos</a></li>
                     <li id="nav-metricas"><a href="#">Painel de Métricas</a></li>
                     <li id="nav-historico"><a href="#">Histórico de Estudos</a></li>
-                    <li id="nav-cronometro"><a href="#">Cronômetro de estudos</a></li>
+                    <li id="nav-cronometro"><a href="#">Cronômetro de estudos</a></li> 
                 </ul>
             </nav>
         </aside>
@@ -36,7 +36,7 @@
                 <form id="form-registro">
                     <div class="form-group">
                         <label for="materia">Matéria:</label>
-                        <select id="materia" name="materia" required>
+                        <select id="materia" name="materia">
                             <option value="" disabled selected>Selecione a matéria</option>
                             <option value="Matemática">Matemática</option>
                             <option value="Física">Física</option>
@@ -47,6 +47,7 @@
                             <option value="Filosofia">Filosofia</option>
                             <option value="Sociologia">Sociologia</option>
                             <option value="Linguagens">Linguagens</option>
+                            <option value="Redação">Redação</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -55,7 +56,7 @@
                     </div>
                     <div class="form-group">
                         <label for="tempo">Tempo de estudo (minutos):</label>
-                        <input type="number" id="tempo" name="tempo" min="1">
+                        <input type="number" id="tempo" name="tempo" min="0">
                     </div>
                     <div class="form-group">
                         <label for="questoes">Questões feitas:</label>
@@ -74,42 +75,105 @@
             </section>
 
             <section id="minhas-metricas" class="hidden">
-    <h2>Painel de Métricas</h2>
-    <div class="sub-nav">
-        <button id="btn-subnav-metricas" class="btn-subnav active">Minhas Métricas</button>
-        <button id="btn-subnav-pontos" class="btn-subnav">Pontos Fortes e A Melhorar</button>
-    </div>
-
-    <div class="sub-page-wrapper">
-        <div id="sub-page-metricas">
-            <div class="metricas-grid">
+                <h2>Painel de Métricas</h2>
+                <div class="sub-nav">
+                    <button id="btn-subnav-metricas" class="btn-subnav active">Minhas Métricas</button>
+                    <button id="btn-subnav-pontos" class="btn-subnav">Pontos Fortes e A Melhorar</button>
                 </div>
-        </div>
 
-        <div id="sub-page-pontos" class="hidden">
-            <details class="bloco-analise" open>
-<summary>
-    Pontos a Melhorar
-    <span class="info-icon" title="Conteúdos com desempenho abaixo de 50%">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-    </span>
-</summary>
-                <div class="tabela-container" id="container-pontos-melhorar">
+                <div class="sub-page-wrapper">
+                    <div id="sub-page-metricas">
+                        <div class="metricas-grid">
+                            <div class="grid-item" id="coluna-stats">
+                                <div class="stat-card"><h4>Tempo Total de Estudo</h4><p id="stat-tempo-total">--</p></div>
+                                <div class="stat-card"><h4>Total de Questões</h4><p id="stat-questoes-total">--</p></div>
+                                <div class="stat-card"><h4>Total de Acertos</h4><p id="stat-acertos-total">--</p></div>
+                                <div class="stat-card"><h4>Desempenho Geral</h4><p id="stat-desempenho-geral">--</p></div>
+                            </div>
+                            <div class="grid-item" id="coluna-heatmap"><div class="heatmap-container"><h4>Mapa de Atividades (Últimos 90 dias)</h4><div id="heatmap-calendario"></div><div class="sequencia-container"><h4>Sequência de Estudos</h4><p id="stat-sequencia">0 dias</p></div></div></div>
+                            <div class="grid-item" id="coluna-donut"><div class="chart-container"><h3>Desempenho Geral</h3><canvas id="grafico-desempenho-geral"></canvas></div></div>
+                            <div class="grid-item" id="item-semanal"><div class="chart-container"><h3>Desempenho nos Últimos 7 Dias</h3><canvas id="grafico-semanal"></canvas></div></div>
+                            <div class="grid-item" id="item-desempenho-materia"><div class="chart-container"><h3>Desempenho (%) por Matéria</h3><canvas id="grafico-desempenho"></canvas></div></div>
+                            <div class="grid-item" id="item-questoes-materia"><div class="chart-container"><h3>Questões Feitas por Matéria</h3><canvas id="grafico-materias"></canvas></div></div>
+                            <div class="grid-item" id="item-flashcards-materia"><div class="chart-container"><h3>Flashcards Feitos por Matéria</h3><canvas id="grafico-flashcards-materia"></canvas></div></div>
+                            
+                            <div class="grid-item" id="item-tempo-diario">
+                                <div class="chart-container">
+                                    <div class="chart-header">
+                                        <h3>Tempo de Estudo por Dia</h3>
+                                        <div class="filtro-container">
+                                            <button class="filtro-btn" data-filtro-id="filtro-tempo-diario">14 dias ▾</button>
+                                            <div id="filtro-tempo-diario" class="filtro-dropdown hidden">
+                                                <a href="#" data-periodo="7d">7 dias</a>
+                                                <a href="#" data-periodo="14d">14 dias</a>
+                                                <a href="#" data-periodo="30d">30 dias</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <canvas id="grafico-tempo-diario"></canvas>
+                                </div>
+                            </div>
+                            <div class="grid-item" id="item-tempo-materia">
+                                <div class="chart-container">
+                                    <div class="chart-header">
+                                        <h3>Tempo por Matéria (min)</h3>
+                                        <div class="filtro-container">
+                                            <button class="filtro-btn" data-filtro-id="filtro-tempo-materia">Total ▾</button>
+                                            <div id="filtro-tempo-materia" class="filtro-dropdown hidden">
+                                                <a href="#" data-periodo="total">Desde o início</a>
+                                                <a href="#" data-periodo="12m">12 meses</a>
+                                                <a href="#" data-periodo="ano">Ano atual</a>
+                                                <a href="#" data-periodo="30d">30 dias</a>
+                                                <a href="#" data-periodo="7d">7 dias</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <canvas id="grafico-tempo-materia"></canvas>
+                                </div>
+                            </div>
+                            <div class="grid-item" id="item-tempo-area">
+                                <div class="chart-container">
+                                    <div class="chart-header">
+                                        <h3>Tempo por Área (%)</h3>
+                                        <div class="filtro-container">
+                                            <button class="filtro-btn" data-filtro-id="filtro-tempo-area">Total ▾</button>
+                                            <div id="filtro-tempo-area" class="filtro-dropdown hidden">
+                                                <a href="#" data-periodo="total">Desde o início</a>
+                                                <a href="#" data-periodo="12m">12 meses</a>
+                                                <a href="#" data-periodo="ano">Ano atual</a>
+                                                <a href="#" data-periodo="30d">30 dias</a>
+                                                <a href="#" data-periodo="7d">7 dias</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <canvas id="grafico-tempo-area"></canvas>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-            </details>
-            <details class="bloco-analise" open>
-<summary>
-    Pontos Fortes
-    <span class="info-icon" title="Conteúdos com desempenho igual ou acima de 80%">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-    </span>
-</summary>
-                <div class="tabela-container" id="container-pontos-fortes">
+
+                    <div id="sub-page-pontos" class="hidden">
+                        <details class="bloco-analise" open>
+                            <summary>
+                                Pontos a Melhorar
+                                <span class="info-icon" title="Conteúdos com desempenho abaixo de 50%">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                </span>
+                            </summary>
+                            <div class="tabela-container" id="container-pontos-melhorar"></div>
+                        </details>
+                        <details class="bloco-analise" open>
+                            <summary>
+                                Pontos Fortes e A Melhorar
+                                <span class="info-icon" title="Conteúdos com desempenho igual ou acima de 80%">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                </span>
+                            </summary>
+                            <div class="tabela-container" id="container-pontos-fortes"></div>
+                        </details>
                     </div>
-            </details>
-        </div>
-    </div>
-</section>
+                </div>
+            </section>
 
             <section id="historico-estudos" class="hidden">
                 <h2>Histórico de Estudos</h2>
@@ -132,61 +196,35 @@
                     </table>
                 </div>
             </section>
-            <section id="cronometro-estudos" class="hidden">
-    <h2>Cronômetro de Estudos</h2>
-    
-    <div class="cronometro-card">
-        <div class="cronometro-display-container">
-            <div id="cronometro-display">00:00:00</div>
-            <div class="cronometro-controles">
-                <button id="btn-start" class="cronometro-btn start-btn">▶ Iniciar</button>
-                <button id="btn-pause" class="cronometro-btn pause-btn">⏸ Pausar</button>
-                <button id="btn-reset" class="cronometro-btn reset-btn">⏹ Resetar</button>
-                <button id="btn-salvar-cronometro" class="cronometro-btn salvar-btn">💾 Salvar Sessão</button>
-            </div>
-        </div>
 
-        <div class="cronometro-form-container">
-            <form id="form-cronometro">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="cronometro-materia">Matéria</label>
-                        <select id="cronometro-materia" name="materia">
-                            <option value="" disabled selected>Selecione</option>
-                            <option value="Matemática">Matemática</option>
-                            <option value="Física">Física</option>
-                            <option value="Química">Química</option>
-                            <option value="Biologia">Biologia</option>
-                            <option value="História">História</option>
-                            <option value="Geografia">Geografia</option>
-                            <option value="Filosofia">Filosofia</option>
-                            <option value="Sociologia">Sociologia</option>
-                            <option value="Linguagens">Linguagens</option>
-                        </select>
+            <section id="cronometro-estudos" class="hidden">
+                <h2>Cronômetro de Estudos</h2>
+                <div class="cronometro-card">
+                    <div class="cronometro-display-container">
+                        <div id="cronometro-display">00:00:00</div>
+                        <div class="cronometro-controles">
+                            <button id="btn-start" class="cronometro-btn start-btn">▶ Iniciar</button>
+                            <button id="btn-pause" class="cronometro-btn pause-btn">⏸ Pausar</button>
+                            <button id="btn-reset" class="cronometro-btn reset-btn">⏹ Resetar</button>
+                            <button id="btn-salvar-cronometro" class="cronometro-btn salvar-btn">💾 Salvar Sessão</button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="cronometro-conteudo">Conteúdo</label>
-                        <input type="text" id="cronometro-conteudo" name="conteudo" placeholder="Opcional">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="cronometro-questoes">Questões</label>
-                        <input type="number" id="cronometro-questoes" name="questoes" min="0" placeholder="Opcional">
-                    </div>
-                    <div class="form-group">
-                        <label for="cronometro-acertos">Acertos</label>
-                        <input type="number" id="cronometro-acertos" name="acertos" min="0" placeholder="Opcional">
-                    </div>
-                    <div class="form-group">
-                        <label for="cronometro-flashcards">Flashcards</label>
-                        <input type="number" id="cronometro-flashcards" name="flashcards" min="0" placeholder="Opcional">
+                    <div class="cronometro-form-container">
+                        <form id="form-cronometro">
+                            <div class="form-row">
+                                <div class="form-group"><label for="cronometro-materia">Matéria</label><select id="cronometro-materia" name="materia"><option value="" disabled selected>Selecione</option><option value="Matemática">Matemática</option><option value="Física">Física</option><option value="Química">Química</option><option value="Biologia">Biologia</option><option value="História">História</option><option value="Geografia">Geografia</option><option value="Filosofia">Filosofia</option><option value="Sociologia">Sociologia</option><option value="Linguagens">Linguagens</option><option value="Redação">Redação</option></select></div>
+                                <div class="form-group"><label for="cronometro-conteudo">Conteúdo</label><input type="text" id="cronometro-conteudo" name="conteudo" placeholder="Opcional"></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label for="cronometro-questoes">Questões</label><input type="number" id="cronometro-questoes" name="questoes" min="0" placeholder="Opcional"></div>
+                                <div class="form-group"><label for="cronometro-acertos">Acertos</label><input type="number" id="cronometro-acertos" name="acertos" min="0" placeholder="Opcional"></div>
+                                <div class="form-group"><label for="cronometro-flashcards">Flashcards</label><input type="number" id="cronometro-flashcards" name="flashcards" min="0" placeholder="Opcional"></div>
+                            </div>
+                        </form>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
-</section>
+            </section>
+
         </main>
     </div>
 
