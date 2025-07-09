@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT FINAL DO DASHBOARD (COM ANÁLISE DE PONTOS FORTES/FRACOS)
+// SCRIPT FINAL E COMPLETO DO DASHBOARD (VERSÃO DEFINITIVA)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -56,39 +56,43 @@ async function carregarDadosIniciais(alunoId) {
     } catch (error) { console.error("Erro ao buscar dados iniciais: ", error); }
 }
 
-function configurarNavegacao() {
+function configurarNavegacao(alunoId) {
     const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico') };
     const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos') };
-    
-    function mudarAba(abaAtiva) {
+    const btnSubNavMetricas = document.getElementById('btn-subnav-metricas');
+    const btnSubNavPontos = document.getElementById('btn-subnav-pontos');
+    const pageMetricas = document.getElementById('sub-page-metricas');
+    const pagePontos = document.getElementById('sub-page-pontos');
+
+    function mudarAbaPrincipal(abaAtiva) {
         Object.keys(sections).forEach(key => sections[key]?.classList.toggle('hidden', key !== abaAtiva));
         Object.keys(navItems).forEach(key => navItems[key]?.classList.remove('active'));
         navItems[abaAtiva]?.classList.add('active');
         if (abaAtiva === 'metricas') {
-            document.getElementById('btn-subnav-metricas').click();
+            if (!pagePontos.classList.contains('hidden')) {
+                btnSubNavPontos.click();
+            } else {
+                btnSubNavMetricas.click();
+            }
         }
+    }
+    
+    function mudarSubAba(subAbaAtiva) {
+        pageMetricas.classList.toggle('hidden', subAbaAtiva !== 'metricas');
+        pagePontos.classList.toggle('hidden', subAbaAtiva !== 'pontos');
+        btnSubNavMetricas.classList.toggle('active', subAbaAtiva === 'metricas');
+        btnSubNavPontos.classList.toggle('active', subAbaAtiva === 'pontos');
+
+        if (subAbaAtiva === 'metricas') processarMetricas();
+        if (subAbaAtiva === 'pontos') processarAnalisePontos();
     }
 
     Object.keys(navItems).forEach(key => {
-        if(navItems[key]) navItems[key].addEventListener('click', (e) => { e.preventDefault(); mudarAba(key); });
+        if(navItems[key]) navItems[key].addEventListener('click', (e) => { e.preventDefault(); mudarAbaPrincipal(key); });
     });
-
-    const btnMetricas = document.getElementById('btn-subnav-metricas');
-    const btnPontos = document.getElementById('btn-subnav-pontos');
-    const pageMetricas = document.getElementById('sub-page-metricas');
-    const pagePontos = document.getElementById('sub-page-pontos');
-
-    btnMetricas.addEventListener('click', () => {
-        btnMetricas.classList.add('active'); btnPontos.classList.remove('active');
-        pageMetricas.classList.remove('hidden'); pagePontos.classList.add('hidden');
-        processarMetricas();
-    });
-
-    btnPontos.addEventListener('click', () => {
-        btnPontos.classList.add('active'); btnMetricas.classList.remove('active');
-        pagePontos.classList.remove('hidden'); pageMetricas.classList.add('hidden');
-        processarAnalisePontos();
-    });
+    
+    btnSubNavMetricas.addEventListener('click', () => mudarSubAba('metricas'));
+    btnSubNavPontos.addEventListener('click', () => mudarSubAba('pontos'));
 }
 
 function configurarFormulario(alunoId) {
@@ -168,12 +172,64 @@ function renderizarHistorico() {
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', deletarRegistro));
 }
 
+function abrirFormularioEdicao(event) {
+    const docId = event.currentTarget.dataset.id;
+    const registro = meusRegistros.find(r => r.id === docId);
+    if (!registro) return;
+    const formHTML = `<h2>Editar Registro</h2><form id="form-edicao" data-id="${docId}">
+        <div class="form-group"><label for="edit-materia">Matéria:</label><select id="edit-materia" required>${TODAS_AS_MATERIAS.map(m => `<option value="${m}" ${m === registro.materia ? 'selected' : ''}>${m}</option>`).join('')}</select></div>
+        <div class="form-group"><label for="edit-conteudo">Conteúdo:</label><input type="text" id="edit-conteudo" value="${registro.conteudo || ''}"></div>
+        <div class="form-group"><label for="edit-tempo">Tempo (min):</label><input type="number" id="edit-tempo" value="${registro.tempoEstudado || 0}" required min="1"></div>
+        <div class="form-group"><label for="edit-questoes">Questões:</label><input type="number" id="edit-questoes" value="${registro.questoesFeitas || 0}" min="0"></div>
+        <div class="form-group"><label for="edit-acertos">Acertos:</label><input type="number" id="edit-acertos" value="${registro.questoesAcertadas || 0}" min="0"></div>
+        <div class="form-group"><label for="edit-flashcards">Flashcards:</label><input type="number" id="edit-flashcards" value="${registro.flashcardsFeitos || 0}" min="0"></div>
+        <div class="modal-buttons"><button type="button" class="modal-btn btn-cancel">Cancelar</button><button type="submit" class="modal-btn edit-btn">Salvar Alterações</button></div>
+        </form>`;
+    showCustomModal(formHTML);
+    document.getElementById('form-edicao').addEventListener('submit', salvarEdicao);
+    document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
+}
+
+async function salvarEdicao(event) {
+    event.preventDefault();
+    const docId = event.currentTarget.dataset.id;
+    const dadosAtualizados = {
+        materia: document.getElementById('edit-materia').value,
+        conteudo: document.getElementById('edit-conteudo').value,
+        tempoEstudado: Number(document.getElementById('edit-tempo').value),
+        questoesFeitas: Number(document.getElementById('edit-questoes').value),
+        questoesAcertadas: Number(document.getElementById('edit-acertos').value),
+        flashcardsFeitos: Number(document.getElementById('edit-flashcards').value),
+    };
+    try {
+        const docRef = doc(db, 'registros', docId);
+        await updateDoc(docRef, dadosAtualizados);
+        const index = meusRegistros.findIndex(r => r.id === docId);
+        meusRegistros[index] = { ...meusRegistros[index], ...dadosAtualizados };
+        renderizarHistorico();
+        hideCustomModal();
+        showCustomAlert("Registro atualizado com sucesso!");
+    } catch (error) { showCustomAlert("Falha ao atualizar o registro.", "erro"); }
+}
+
+async function deletarRegistro(event) {
+    const docId = event.currentTarget.dataset.id;
+    const fazerExclusao = async () => {
+        try {
+            await deleteDoc(doc(db, "registros", docId));
+            meusRegistros = meusRegistros.filter(r => r.id !== docId);
+            renderizarHistorico();
+            processarMetricas();
+            showCustomAlert("Registro excluído com sucesso.");
+        } catch (error) { showCustomAlert("Falha ao excluir o registro.", "erro"); }
+    };
+    showCustomConfirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.", fazerExclusao);
+}
+
 function configurarModalPrincipal() {
     const modal = document.getElementById('main-modal');
     modal.addEventListener('click', (e) => {
-        if (e.target.classList.contains('close-modal-btn') || e.target === modal) {
-            hideCustomModal();
-        }
+        if (e.target.classList.contains('close-modal-btn') || e.target === modal) hideCustomModal();
     });
 }
 
@@ -204,21 +260,16 @@ function showCustomConfirm(message, onConfirm) {
 
 function processarMetricas() {
     const grid = document.querySelector('#sub-page-metricas .metricas-grid');
+    if (!grid) return;
     if (!grid.innerHTML.trim()) {
-        // Popula o grid de métricas apenas se estiver vazio
         grid.innerHTML = `
-            <div class="grid-item" id="coluna-stats">
-                <div class="stat-card"><h4>Tempo Total de Estudo</h4><p id="stat-tempo-total">--</p></div>
-                <div class="stat-card"><h4>Total de Questões</h4><p id="stat-questoes-total">--</p></div>
-                <div class="stat-card"><h4>Total de Acertos</h4><p id="stat-acertos-total">--</p></div>
-            </div>
+            <div class="grid-item" id="coluna-stats"><div class="stat-card"><h4>Tempo Total de Estudo</h4><p id="stat-tempo-total">--</p></div><div class="stat-card"><h4>Total de Questões</h4><p id="stat-questoes-total">--</p></div><div class="stat-card"><h4>Total de Acertos</h4><p id="stat-acertos-total">--</p></div><div class="stat-card"><h4>Desempenho Geral</h4><p id="stat-desempenho-geral">--</p></div></div>
             <div class="grid-item" id="coluna-heatmap"><div class="heatmap-container"><h4>Mapa de Atividades (Últimos 90 dias)</h4><div id="heatmap-calendario"></div><div class="sequencia-container"><h4>Sequência de Estudos</h4><p id="stat-sequencia">0 dias</p></div></div></div>
             <div class="grid-item" id="coluna-donut"><div class="chart-container"><h3>Desempenho Geral</h3><canvas id="grafico-desempenho-geral"></canvas></div></div>
             <div class="grid-item" id="item-semanal"><div class="chart-container"><h3>Desempenho nos Últimos 7 Dias</h3><canvas id="grafico-semanal"></canvas></div></div>
             <div class="grid-item" id="item-desempenho-materia"><div class="chart-container"><h3>Desempenho (%) por Matéria</h3><canvas id="grafico-desempenho"></canvas></div></div>
             <div class="grid-item" id="item-questoes-materia"><div class="chart-container"><h3>Questões Feitas por Matéria</h3><canvas id="grafico-materias"></canvas></div></div>
-            <div class="grid-item" id="item-flashcards-materia"><div class="chart-container"><h3>Flashcards Feitos por Matéria</h3><canvas id="grafico-flashcards-materia"></canvas></div></div>
-        `;
+            <div class="grid-item" id="item-flashcards-materia"><div class="chart-container"><h3>Flashcards Feitos por Matéria</h3><canvas id="grafico-flashcards-materia"></canvas></div></div>`;
     }
 
     let tempoTotal = 0, questoesTotal = 0, acertosTotal = 0;
@@ -242,14 +293,12 @@ function processarMetricas() {
     document.getElementById('stat-tempo-total').textContent = `${tempoTotal} min`;
     document.getElementById('stat-questoes-total').textContent = questoesTotal;
     document.getElementById('stat-acertos-total').textContent = acertosTotal;
+    document.getElementById('stat-desempenho-geral').textContent = `${desempenhoGeral.toFixed(1)}%`;
     
     let sequenciaAtual = 0;
     let hoje = new Date();
     if (!contagemPorDia[hoje.toISOString().split('T')[0]]) { hoje.setDate(hoje.getDate() - 1); }
-    while (contagemPorDia[hoje.toISOString().split('T')[0]]) {
-        sequenciaAtual++;
-        hoje.setDate(hoje.getDate() - 1);
-    }
+    while (contagemPorDia[hoje.toISOString().split('T')[0]]) { sequenciaAtual++; hoje.setDate(hoje.getDate() - 1); }
     document.getElementById('stat-sequencia').textContent = `${sequenciaAtual} dias`;
 
     const heatmapContainer = document.getElementById('heatmap-calendario');
