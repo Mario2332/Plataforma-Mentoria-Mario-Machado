@@ -10,6 +10,14 @@ body {
     background-color: #f0f4f8; 
 }
 
+/* Adicionado para centralizar o conteúdo da página de login */
+body:not(.dashboard-body) {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
 /* Estilos específicos para a página de login */
 .login-container {
     background-color: #ffffff;
