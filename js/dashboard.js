@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM TODAS AS CORREÇÕES)
+// SCRIPT FINAL DO DASHBOARD (COM ANÁLISE DE PONTOS FORTES/FRACOS)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -24,6 +24,11 @@ const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "Hi
 let todosOsGraficos = {};
 const pluginTextoNoCentro = { id: 'text-center', afterDatasetsDraw(chart) { const { ctx, data } = chart; const text = data.datasets[0].text; if (!text) return; ctx.save(); const x = chart.getDatasetMeta(0).data[0].x; const y = chart.getDatasetMeta(0).data[0].y; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = '#1c3d5a'; ctx.fillText(text, x, y); ctx.restore(); } };
 
+function normalizeString(str) {
+    if (!str) return '';
+    return str.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const alunoId = sessionStorage.getItem('alunoId');
     if (!alunoId) { window.location.href = 'index.html'; return; }
@@ -44,7 +49,9 @@ async function carregarDadosIniciais(alunoId) {
         const q = query(collection(db, "registros"), where("alunoId", "==", alunoId));
         const querySnapshot = await getDocs(q);
         meusRegistros = []; 
-        querySnapshot.forEach((doc) => { meusRegistros.push({ id: doc.id, ...doc.data() }); });
+        querySnapshot.forEach((doc) => {
+            meusRegistros.push({ id: doc.id, ...doc.data() });
+        });
         renderizarHistorico(); 
     } catch (error) { console.error("Erro ao buscar dados iniciais: ", error); }
 }
@@ -52,14 +59,35 @@ async function carregarDadosIniciais(alunoId) {
 function configurarNavegacao() {
     const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico') };
     const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos') };
+    
     function mudarAba(abaAtiva) {
         Object.keys(sections).forEach(key => sections[key]?.classList.toggle('hidden', key !== abaAtiva));
         Object.keys(navItems).forEach(key => navItems[key]?.classList.remove('active'));
         navItems[abaAtiva]?.classList.add('active');
-        if (abaAtiva === 'metricas') processarMetricas();
+        if (abaAtiva === 'metricas') {
+            document.getElementById('btn-subnav-metricas').click();
+        }
     }
+
     Object.keys(navItems).forEach(key => {
         if(navItems[key]) navItems[key].addEventListener('click', (e) => { e.preventDefault(); mudarAba(key); });
+    });
+
+    const btnMetricas = document.getElementById('btn-subnav-metricas');
+    const btnPontos = document.getElementById('btn-subnav-pontos');
+    const pageMetricas = document.getElementById('sub-page-metricas');
+    const pagePontos = document.getElementById('sub-page-pontos');
+
+    btnMetricas.addEventListener('click', () => {
+        btnMetricas.classList.add('active'); btnPontos.classList.remove('active');
+        pageMetricas.classList.remove('hidden'); pagePontos.classList.add('hidden');
+        processarMetricas();
+    });
+
+    btnPontos.addEventListener('click', () => {
+        btnPontos.classList.add('active'); btnMetricas.classList.remove('active');
+        pagePontos.classList.remove('hidden'); pageMetricas.classList.add('hidden');
+        processarAnalisePontos();
     });
 }
 
@@ -70,6 +98,7 @@ function configurarFormulario(alunoId) {
         event.preventDefault();
         const novoRegistro = {
             alunoId, materia: document.getElementById('materia').value,
+            conteudo: document.getElementById('conteudo').value,
             tempoEstudado: Number(document.getElementById('tempo').value),
             questoesFeitas: Number(document.getElementById('questoes').value),
             questoesAcertadas: Number(document.getElementById('acertos').value),
@@ -81,6 +110,7 @@ function configurarFormulario(alunoId) {
             meusRegistros.push({ id: docRef.id, ...novoRegistro });
             renderizarHistorico();
             showCustomAlert("Registro salvo com sucesso!");
+            formRegistro.reset();
         } catch (e) { showCustomAlert("Ocorreu um erro ao salvar o registro.", "erro"); }
     });
 }
@@ -91,7 +121,7 @@ function configurarCabecalhosTabela() {
             const column = header.dataset.sort; if (!column) return;
             const direction = sortState.column === column && sortState.direction === 'desc' ? 'asc' : 'desc';
             sortState = { column, direction };
-            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => { th.classList.remove('active-sort'); });
+            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => th.classList.remove('active-sort'));
             header.classList.add('active-sort');
             renderizarHistorico();
         });
@@ -103,24 +133,31 @@ function renderizarHistorico() {
     if (!tbody) return;
     meusRegistros.sort((a, b) => {
         let valA = a[sortState.column]; let valB = b[sortState.column];
-        if (sortState.column === 'desempenho') { valA = a.questoesFeitas > 0 ? (a.questoesAcertadas / a.questoesFeitas) : -1; valB = b.questoesFeitas > 0 ? (b.questoesAcertadas / b.questoesFeitas) : -1; }
-        if (valA?.toDate) valA = valA.toDate(); if (valB?.toDate) valB = valB.toDate();
+        if (sortState.column === 'desempenho') {
+            valA = a.questoesFeitas > 0 ? (a.questoesAcertadas / a.questoesFeitas) : -1;
+            valB = b.questoesFeitas > 0 ? (b.questoesAcertadas / b.questoesFeitas) : -1;
+        }
+        if (valA?.toDate) valA = valA.toDate();
+        if (valB?.toDate) valB = valB.toDate();
         if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
         if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
         return 0;
     });
     tbody.innerHTML = ''; 
     if (meusRegistros.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhum registro de estudo encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum registro de estudo encontrado.</td></tr>';
         return;
     }
-    meusRegistros.forEach((reg) => {
+    meusRegistros.forEach((reg, index) => {
         const tr = document.createElement('tr');
+        tr.dataset.index = index;
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
         tr.innerHTML = `
-            <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.tempoEstudado || 0}</td><td>${reg.questoesFeitas || 0}</td>
-            <td>${reg.questoesAcertadas || 0}</td><td>${desempenho}</td><td>${reg.flashcardsFeitos || 0}</td>
+            <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.conteudo || ''}</td>
+            <td>${reg.tempoEstudado || 0}</td><td>${reg.questoesFeitas || 0}</td>
+            <td>${reg.questoesAcertadas || 0}</td><td>${desempenho}</td>
+            <td>${reg.flashcardsFeitos || 0}</td>
             <td><div class="action-buttons">
                 <button class="action-btn edit-btn" data-id="${reg.id}" title="Editar">✏️</button>
                 <button class="action-btn delete-btn" data-id="${reg.id}" title="Excluir">🗑️</button>
@@ -129,58 +166,6 @@ function renderizarHistorico() {
     });
     document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', abrirFormularioEdicao));
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', deletarRegistro));
-}
-
-function abrirFormularioEdicao(event) {
-    const docId = event.currentTarget.dataset.id;
-    const registro = meusRegistros.find(r => r.id === docId);
-    if (!registro) return;
-    const formHTML = `<h2>Editar Registro</h2><form id="form-edicao" data-id="${docId}">
-        <div class="form-group"><label for="edit-materia">Matéria:</label><select id="edit-materia" required>${TODAS_AS_MATERIAS.map(m => `<option value="${m}" ${m === registro.materia ? 'selected' : ''}>${m}</option>`).join('')}</select></div>
-        <div class="form-group"><label for="edit-tempo">Tempo (min):</label><input type="number" id="edit-tempo" value="${registro.tempoEstudado || 0}" required min="1"></div>
-        <div class="form-group"><label for="edit-questoes">Questões:</label><input type="number" id="edit-questoes" value="${registro.questoesFeitas || 0}" min="0"></div>
-        <div class="form-group"><label for="edit-acertos">Acertos:</label><input type="number" id="edit-acertos" value="${registro.questoesAcertadas || 0}" min="0"></div>
-        <div class="form-group"><label for="edit-flashcards">Flashcards:</label><input type="number" id="edit-flashcards" value="${registro.flashcardsFeitos || 0}" min="0"></div>
-        <div class="modal-buttons"><button type="button" class="modal-btn btn-cancel">Cancelar</button><button type="submit" class="modal-btn edit-btn">Salvar Alterações</button></div>
-        </form>`;
-    showCustomModal(formHTML);
-    document.getElementById('form-edicao').addEventListener('submit', salvarEdicao);
-    document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
-}
-
-async function salvarEdicao(event) {
-    event.preventDefault();
-    const docId = event.currentTarget.dataset.id;
-    const dadosAtualizados = {
-        materia: document.getElementById('edit-materia').value,
-        tempoEstudado: Number(document.getElementById('edit-tempo').value),
-        questoesFeitas: Number(document.getElementById('edit-questoes').value),
-        questoesAcertadas: Number(document.getElementById('edit-acertos').value),
-        flashcardsFeitos: Number(document.getElementById('edit-flashcards').value),
-    };
-    try {
-        const docRef = doc(db, 'registros', docId);
-        await updateDoc(docRef, dadosAtualizados);
-        const index = meusRegistros.findIndex(r => r.id === docId);
-        meusRegistros[index] = { ...meusRegistros[index], ...dadosAtualizados };
-        renderizarHistorico();
-        hideCustomModal();
-        showCustomAlert("Registro atualizado com sucesso!");
-    } catch (error) { showCustomAlert("Falha ao atualizar o registro.", "erro"); }
-}
-
-async function deletarRegistro(event) {
-    const docId = event.currentTarget.dataset.id;
-    const fazerExclusao = async () => {
-        try {
-            await deleteDoc(doc(db, "registros", docId));
-            meusRegistros = meusRegistros.filter(r => r.id !== docId);
-            renderizarHistorico();
-            processarMetricas();
-            showCustomAlert("Registro excluído com sucesso.");
-        } catch (error) { showCustomAlert("Falha ao excluir o registro.", "erro"); }
-    };
-    showCustomConfirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.", fazerExclusao);
 }
 
 function configurarModalPrincipal() {
@@ -218,6 +203,24 @@ function showCustomConfirm(message, onConfirm) {
 }
 
 function processarMetricas() {
+    const grid = document.querySelector('#sub-page-metricas .metricas-grid');
+    if (!grid.innerHTML.trim()) {
+        // Popula o grid de métricas apenas se estiver vazio
+        grid.innerHTML = `
+            <div class="grid-item" id="coluna-stats">
+                <div class="stat-card"><h4>Tempo Total de Estudo</h4><p id="stat-tempo-total">--</p></div>
+                <div class="stat-card"><h4>Total de Questões</h4><p id="stat-questoes-total">--</p></div>
+                <div class="stat-card"><h4>Total de Acertos</h4><p id="stat-acertos-total">--</p></div>
+            </div>
+            <div class="grid-item" id="coluna-heatmap"><div class="heatmap-container"><h4>Mapa de Atividades (Últimos 90 dias)</h4><div id="heatmap-calendario"></div><div class="sequencia-container"><h4>Sequência de Estudos</h4><p id="stat-sequencia">0 dias</p></div></div></div>
+            <div class="grid-item" id="coluna-donut"><div class="chart-container"><h3>Desempenho Geral</h3><canvas id="grafico-desempenho-geral"></canvas></div></div>
+            <div class="grid-item" id="item-semanal"><div class="chart-container"><h3>Desempenho nos Últimos 7 Dias</h3><canvas id="grafico-semanal"></canvas></div></div>
+            <div class="grid-item" id="item-desempenho-materia"><div class="chart-container"><h3>Desempenho (%) por Matéria</h3><canvas id="grafico-desempenho"></canvas></div></div>
+            <div class="grid-item" id="item-questoes-materia"><div class="chart-container"><h3>Questões Feitas por Matéria</h3><canvas id="grafico-materias"></canvas></div></div>
+            <div class="grid-item" id="item-flashcards-materia"><div class="chart-container"><h3>Flashcards Feitos por Matéria</h3><canvas id="grafico-flashcards-materia"></canvas></div></div>
+        `;
+    }
+
     let tempoTotal = 0, questoesTotal = 0, acertosTotal = 0;
     const contagemPorDia = {}, dadosPorMateria = {};
     TODAS_AS_MATERIAS.forEach(materia => { dadosPorMateria[materia] = { questoes: 0, acertos: 0, flashcards: 0 }; });
@@ -239,7 +242,6 @@ function processarMetricas() {
     document.getElementById('stat-tempo-total').textContent = `${tempoTotal} min`;
     document.getElementById('stat-questoes-total').textContent = questoesTotal;
     document.getElementById('stat-acertos-total').textContent = acertosTotal;
-    document.getElementById('stat-desempenho-geral').textContent = `${desempenhoGeral.toFixed(1)}%`;
     
     let sequenciaAtual = 0;
     let hoje = new Date();

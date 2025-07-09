@@ -720,3 +720,67 @@ main {
 #modal-body .modal-buttons {
     margin-top: 10px; /* Reduz a margem superior se o último elemento for um form-group */
 }
+
+/* ========================================= */
+/* ESTILOS DA NOVA ÁREA DE ANÁLISE         */
+/* ========================================= */
+
+/* Container da sub-navegação */
+.sub-nav {
+    margin-bottom: 30px;
+    display: flex;
+    gap: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.btn-subnav {
+    padding: 10px 20px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #6c757d;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px; /* Alinha o botão com a borda do container */
+}
+
+.btn-subnav.active {
+    color: #007BFF;
+    border-bottom-color: #007BFF;
+}
+
+/* Blocos retráteis (Pontos Fortes / A Melhorar) */
+.bloco-analise {
+    margin-bottom: 30px;
+    border: 1px solid #e9edf2;
+    border-radius: 12px;
+}
+
+.bloco-analise summary {
+    padding: 20px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1c3d5a;
+    cursor: pointer;
+    list-style: inside; /* Controla a posição do triângulo */
+}
+
+.bloco-analise .tabela-container {
+    padding: 0 20px 20px 20px;
+    border-top: 1px solid #e9edf2;
+}
+
+.info-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #6c757d;
+    border-radius: 50%;
+    color: #6c757d;
+    text-align: center;
+    font-size: 14px;
+    line-height: 18px;
+    font-weight: bold;
+    cursor: help;
+}

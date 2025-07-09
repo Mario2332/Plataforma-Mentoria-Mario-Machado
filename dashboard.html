@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Dashboard - Plataforma de Estudos</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -16,169 +14,124 @@
     </header>
 
     <div class="dashboard-container">
-    
-    <aside class="sidebar">
-        <div class="student-info">
-            <h3>Olá, Aluno!</h3>
-        </div>
-        <nav>
-    <ul>
-        <li id="nav-registro" class="active"><a href="#">Registro de Estudos</a></li>
-        <li id="nav-metricas"><a href="#">Minhas Métricas</a></li>
-        <li id="nav-historico"><a href="#">Histórico de estudos</a></li>
-    </ul>
-</nav>
-    </aside>
-
-    <main class="main-content">
-
-        <section id="registro-estudos">
-            <h2>Registrar nova sessão de estudo</h2>
-            <form id="form-registro">
-                <div class="form-group">
-                    <label for="materia">Matéria:</label>
-                    <select id="materia" name="materia" required>
-                        <option value="" disabled selected>Selecione a matéria</option>
-                        <option value="Matemática">Matemática</option>
-                        <option value="Física">Física</option>
-                        <option value="Química">Química</option>
-                        <option value="Biologia">Biologia</option>
-                        <option value="História">História</option>
-                        <option value="Geografia">Geografia</option>
-                        <option value="Filosofia">Filosofia</option>
-                        <option value="Sociologia">Sociologia</option>
-                        <option value="Linguagens">Linguagens</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="tempo">Tempo de estudo (minutos):</label>
-                    <input type="number" id="tempo" name="tempo" required min="1">
-                </div>
-                <div class="form-group">
-                    <label for="questoes">Questões feitas:</label>
-                    <input type="number" id="questoes" name="questoes" min="0">
-                </div>
-                <div class="form-group">
-                    <label for="acertos">Acertos:</label>
-                    <input type="number" id="acertos" name="acertos" min="0">
-                </div>
-                <div class="form-group">
-                <label for="flashcards">Flashcards feitos:</label>
-                <input type="number" id="flashcards" name="flashcards" min="0">
+        
+        <aside class="sidebar">
+            <div class="student-info">
+                <h3>Olá, Aluno!</h3>
             </div>
-                <button type="submit">Salvar Registro</button>
-            </form>
-        </section>
+            <nav>
+                <ul>
+                    <li id="nav-registro" class="active"><a href="#">Registro de Estudos</a></li>
+                    <li id="nav-metricas"><a href="#">Painel de Métricas</a></li> <li id="nav-historico"><a href="#">Histórico de Estudos</a></li>
+                </ul>
+            </nav>
+        </aside>
 
-        <section id="minhas-metricas" class="hidden">
-    <h2>Minhas Métricas</h2>
-    <p>Aqui você verá um resumo completo do seu progresso.</p>
-    
-    <div class="metricas-grid">
-
-        <div class="grid-item" id="coluna-stats">
-            <div class="stat-card">
-                <h4>Tempo Total de Estudo</h4>
-                <p id="stat-tempo-total">--</p>
-            </div>
-            <div class="stat-card">
-                <h4>Total de Questões</h4>
-                <p id="stat-questoes-total">--</p>
-            </div>
-            <div class="stat-card">
-                <h4>Total de Acertos</h4>
-                <p id="stat-acertos-total">--</p>
-            </div>
-            <div class="stat-card">
-   <h4>Desempenho Geral</h4>
-   <p id="stat-desempenho-geral">--</p>
-</div>
-        </div>
-
-        <div class="grid-item" id="coluna-heatmap">
-            <div class="heatmap-container">
-                <h4>Mapa de Atividades (Últimos 90 dias)</h4>
-                <div id="heatmap-calendario"></div>
-                <div class="sequencia-container">
-                    <h4>Sequência de Estudos</h4>
-                    <p id="stat-sequencia">0 dias</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid-item" id="coluna-donut">
-            <div class="chart-container">
-                <h3>Desempenho Geral</h3>
-                <canvas id="grafico-desempenho-geral"></canvas>
-            </div>
-        </div>
-
-        <div class="grid-item" id="item-semanal">
-             <div class="chart-container">
-                <h3>Desempenho nos Últimos 7 Dias</h3>
-                <canvas id="grafico-semanal"></canvas>
-            </div>
-        </div>
-
-        <div class="grid-item" id="item-desempenho-materia">
-            <div class="chart-container">
-                <h3>Desempenho (%) por Matéria</h3>
-                <canvas id="grafico-desempenho"></canvas>
-            </div>
-        </div>
-
-        <div class="grid-item" id="item-questoes-materia">
-    <div class="chart-container">
-        <h3>Questões Feitas por Matéria</h3>
-        <canvas id="grafico-materias"></canvas>
-    </div>
-</div>
-
-<div class="grid-item" id="item-flashcards-materia">
-    <div class="chart-container">
-        <h3>Flashcards Feitos por Matéria</h3>
-        <canvas id="grafico-flashcards-materia"></canvas>
-    </div>
-</div>
-
-    </div>
-</section>
-
-    <section id="historico-estudos" class="hidden">
-        <h2>Histórico de Estudos</h2>
-        <div class="tabela-container">
-            <table id="tabela-historico">
-                <thead>
-                    <tr>
-                        <th data-sort="dataRegistro" class="sortable active-sort desc">Data &#x2195;</th>
-                        <th data-sort="materia" class="sortable">Matéria &#x2195;</th>
-                        <th data-sort="tempoEstudado" class="sortable">Tempo (min) &#x2195;</th>
-                        <th data-sort="questoesFeitas" class="sortable">Questões &#x2195;</th>
-                        <th data-sort="questoesAcertadas" class="sortable">Acertos &#x2195;</th>
-                        <th data-sort="desempenho" class="sortable">Desempenho &#x2195;</th>
-                        <th data-sort="flashcardsFeitos" class="sortable">Flashcards &#x2195;</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    </tbody>
-            </table>
-        </div>
-    </section>
-
-    </main>
-
-</div>
-
-<script type="module" src="js/dashboard.js"></script>
-
-<div id="main-modal" class="modal-container hidden">
-            <div class="modal-content">
-                <span class="close-modal-btn">&times;</span>
-                <div id="modal-body">
+        <main class="main-content">
+            <section id="registro-estudos">
+                <h2>Registrar nova sessão de estudo</h2>
+                <form id="form-registro">
+                    <div class="form-group">
+                        <label for="materia">Matéria:</label>
+                        <select id="materia" name="materia" required>
+                            <option value="" disabled selected>Selecione a matéria</option>
+                            <option value="Matemática">Matemática</option>
+                            <option value="Física">Física</option>
+                            <option value="Química">Química</option>
+                            <option value="Biologia">Biologia</option>
+                            <option value="História">História</option>
+                            <option value="Geografia">Geografia</option>
+                            <option value="Filosofia">Filosofia</option>
+                            <option value="Sociologia">Sociologia</option>
+                            <option value="Linguagens">Linguagens</option>
+                        </select>
                     </div>
-            </div>
-        </div>
+                    <div class="form-group">
+                        <label for="conteudo">Conteúdo estudado:</label>
+                        <input type="text" id="conteudo" name="conteudo" placeholder="Ex: Análise Combinatória, Revolução Francesa" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tempo">Tempo de estudo (minutos):</label>
+                        <input type="number" id="tempo" name="tempo" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="questoes">Questões feitas:</label>
+                        <input type="number" id="questoes" name="questoes" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="acertos">Acertos:</label>
+                        <input type="number" id="acertos" name="acertos" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="flashcards">Flashcards feitos:</label>
+                        <input type="number" id="flashcards" name="flashcards" min="0">
+                    </div>
+                    <button type="submit">Salvar Registro</button>
+                </form>
+            </section>
 
-    </body>
+            <section id="minhas-metricas" class="hidden">
+                <div class="sub-nav">
+                    <button id="btn-subnav-metricas" class="btn-subnav active">Minhas Métricas</button>
+                    <button id="btn-subnav-pontos" class="btn-subnav">Pontos Fortes & A Melhorar</button>
+                </div>
+
+                <div id="sub-page-metricas">
+                    <div class="metricas-grid">
+                        </div>
+                </div>
+
+                <div id="sub-page-pontos" class="hidden">
+                    <details class="bloco-analise" open>
+                        <summary>
+                            Pontos a Melhorar
+                            <span class="info-icon" title="Conteúdos com desempenho abaixo de 50%">&#x24D8;</span>
+                        </summary>
+                        <div class="tabela-container" id="container-pontos-melhorar">
+                            </div>
+                    </details>
+                    <details class="bloco-analise" open>
+                        <summary>
+                            Pontos Fortes
+                            <span class="info-icon" title="Conteúdos com desempenho igual ou acima de 80%">&#x24D8;</span>
+                        </summary>
+                        <div class="tabela-container" id="container-pontos-fortes">
+                            </div>
+                    </details>
+                </div>
+            </section>
+
+            <section id="historico-estudos" class="hidden">
+                <h2>Histórico de Estudos</h2>
+                <div class="tabela-container">
+                    <table id="tabela-historico">
+                        <thead>
+                            <tr>
+                                <th data-sort="dataRegistro" class="sortable active-sort desc">Data &#x2195;</th>
+                                <th data-sort="materia" class="sortable">Matéria &#x2195;</th>
+                                <th data-sort="conteudo" class="sortable">Conteúdo &#x2195;</th>
+                                <th data-sort="tempoEstudado" class="sortable">Tempo (min) &#x2195;</th>
+                                <th data-sort="questoesFeitas" class="sortable">Questões &#x2195;</th>
+                                <th data-sort="questoesAcertadas" class="sortable">Acertos &#x2195;</th>
+                                <th data-sort="desempenho" class="sortable">Desempenho &#x2195;</th>
+                                <th data-sort="flashcardsFeitos" class="sortable">Flashcards &#x2195;</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="main-modal" class="modal-container hidden">
+        <div class="modal-content">
+            <span class="close-modal-btn">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script type="module" src="js/dashboard.js"></script>
+</body>
 </html>
