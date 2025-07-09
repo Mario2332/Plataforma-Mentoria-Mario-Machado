@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT FINAL E COMPLETO DO DASHBOARD (VERSÃO DEFINITIVA)
+// SCRIPT DO DASHBOARD (VERSÃO FINAL E COMPLETA) - PARTE 1
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -18,6 +18,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Variáveis globais
 let meusRegistros = []; 
 let sortState = { column: 'dataRegistro', direction: 'desc' };
 const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Filosofia", "Sociologia", "Linguagens"];
@@ -59,6 +60,7 @@ async function carregarDadosIniciais(alunoId) {
 function configurarNavegacao(alunoId) {
     const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico') };
     const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos') };
+    
     const btnSubNavMetricas = document.getElementById('btn-subnav-metricas');
     const btnSubNavPontos = document.getElementById('btn-subnav-pontos');
     const pageMetricas = document.getElementById('sub-page-metricas');
@@ -69,11 +71,8 @@ function configurarNavegacao(alunoId) {
         Object.keys(navItems).forEach(key => navItems[key]?.classList.remove('active'));
         navItems[abaAtiva]?.classList.add('active');
         if (abaAtiva === 'metricas') {
-            if (!pagePontos.classList.contains('hidden')) {
-                btnSubNavPontos.click();
-            } else {
-                btnSubNavMetricas.click();
-            }
+            // Ao ir para o painel, sempre mostra a sub-aba de métricas primeiro
+            mudarSubAba('metricas');
         }
     }
     
@@ -152,9 +151,8 @@ function renderizarHistorico() {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum registro de estudo encontrado.</td></tr>';
         return;
     }
-    meusRegistros.forEach((reg, index) => {
+    meusRegistros.forEach((reg) => {
         const tr = document.createElement('tr');
-        tr.dataset.index = index;
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
         tr.innerHTML = `
@@ -189,7 +187,6 @@ function abrirFormularioEdicao(event) {
     document.getElementById('form-edicao').addEventListener('submit', salvarEdicao);
     document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
 }
-
 async function salvarEdicao(event) {
     event.preventDefault();
     const docId = event.currentTarget.dataset.id;
@@ -209,7 +206,10 @@ async function salvarEdicao(event) {
         renderizarHistorico();
         hideCustomModal();
         showCustomAlert("Registro atualizado com sucesso!");
-    } catch (error) { showCustomAlert("Falha ao atualizar o registro.", "erro"); }
+    } catch (error) { 
+        console.error("Erro ao atualizar o documento:", error);
+        showCustomAlert("Falha ao atualizar o registro.", "erro"); 
+    }
 }
 
 async function deletarRegistro(event) {
@@ -221,7 +221,10 @@ async function deletarRegistro(event) {
             renderizarHistorico();
             processarMetricas();
             showCustomAlert("Registro excluído com sucesso.");
-        } catch (error) { showCustomAlert("Falha ao excluir o registro.", "erro"); }
+        } catch (error) { 
+            console.error("Erro ao excluir o documento:", error);
+            showCustomAlert("Falha ao excluir o registro.", "erro"); 
+        }
     };
     showCustomConfirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.", fazerExclusao);
 }
@@ -229,13 +232,18 @@ async function deletarRegistro(event) {
 function configurarModalPrincipal() {
     const modal = document.getElementById('main-modal');
     modal.addEventListener('click', (e) => {
-        if (e.target.classList.contains('close-modal-btn') || e.target === modal) hideCustomModal();
+        // Fecha se clicar no X ou fora do conteúdo
+        if (e.target.classList.contains('close-modal-btn') || e.target === modal) {
+            hideCustomModal();
+        }
     });
 }
 
 function showCustomModal(contentHTML) {
-    document.getElementById('modal-body').innerHTML = contentHTML;
-    document.getElementById('main-modal').classList.remove('hidden');
+    const modalBody = document.getElementById('modal-body');
+    const modalContainer = document.getElementById('main-modal');
+    modalBody.innerHTML = contentHTML;
+    modalContainer.classList.remove('hidden');
 }
 
 function hideCustomModal() {
@@ -243,13 +251,24 @@ function hideCustomModal() {
 }
 
 function showCustomAlert(message) {
-    const alertHTML = `<h3>Aviso</h3><p>${message}</p><div class="modal-buttons"><button class="modal-btn btn-cancel">OK</button></div>`;
+    const alertHTML = `
+        <h3>Aviso</h3>
+        <p>${message}</p>
+        <div class="modal-buttons">
+            <button class="modal-btn btn-cancel">OK</button>
+        </div>`;
     showCustomModal(alertHTML);
     document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
 }
 
 function showCustomConfirm(message, onConfirm) {
-    const confirmHTML = `<h3>Confirmação</h3><p>${message}</p><div class="modal-buttons"><button class="modal-btn btn-cancel">Cancelar</button><button class="modal-btn btn-confirm">Excluir</button></div>`;
+    const confirmHTML = `
+        <h3>Confirmação</h3>
+        <p>${message}</p>
+        <div class="modal-buttons">
+            <button class="modal-btn btn-cancel">Cancelar</button>
+            <button class="modal-btn btn-confirm">Excluir</button>
+        </div>`;
     showCustomModal(confirmHTML);
     document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
     document.querySelector('#main-modal .btn-confirm').onclick = () => {
@@ -261,6 +280,8 @@ function showCustomConfirm(message, onConfirm) {
 function processarMetricas() {
     const grid = document.querySelector('#sub-page-metricas .metricas-grid');
     if (!grid) return;
+    
+    // Popula a estrutura do grid de métricas se estiver vazia
     if (!grid.innerHTML.trim()) {
         grid.innerHTML = `
             <div class="grid-item" id="coluna-stats"><div class="stat-card"><h4>Tempo Total de Estudo</h4><p id="stat-tempo-total">--</p></div><div class="stat-card"><h4>Total de Questões</h4><p id="stat-questoes-total">--</p></div><div class="stat-card"><h4>Total de Acertos</h4><p id="stat-acertos-total">--</p></div><div class="stat-card"><h4>Desempenho Geral</h4><p id="stat-desempenho-geral">--</p></div></div>
@@ -345,4 +366,54 @@ function processarMetricas() {
         dadosErrosSemanais.push(errosNoDia);
     }
     todosOsGraficos.semanal = new Chart(document.getElementById('grafico-semanal'), { type: 'line', data: { labels: labelsSemanais, datasets: [ { label: 'Acertos', data: dadosAcertosSemanais, borderColor: 'rgba(75, 192, 192, 1)', fill: true, tension: 0.1 }, { label: 'Erros', data: dadosErrosSemanais, borderColor: 'rgba(255, 99, 132, 1)', fill: true, tension: 0.1 } ] }, options: { scales: { y: { beginAtZero: true } } } });
+}
+
+function processarAnalisePontos() {
+    const dadosPorConteudo = {};
+    meusRegistros.forEach(reg => {
+        if (!reg.conteudo || !reg.questoesFeitas || reg.questoesFeitas === 0) return;
+        const chave = normalizeString(reg.conteudo);
+        if (!dadosPorConteudo[chave]) {
+            dadosPorConteudo[chave] = {
+                conteudoOriginal: reg.conteudo, materia: reg.materia,
+                questoes: 0, acertos: 0, ultimaData: new Date(0)
+            };
+        }
+        dadosPorConteudo[chave].questoes += reg.questoesFeitas;
+        dadosPorConteudo[chave].acertos += reg.questoesAcertadas;
+        const dataRegistro = reg.dataRegistro.toDate();
+        if (dataRegistro > dadosPorConteudo[chave].ultimaData) {
+            dadosPorConteudo[chave].ultimaData = dataRegistro;
+        }
+    });
+
+    const pontosAMelhorar = [], pontosFortes = [];
+    Object.values(dadosPorConteudo).forEach(dado => {
+        const desempenho = (dado.acertos / dado.questoes) * 100;
+        const item = { ...dado, desempenho: desempenho.toFixed(1) };
+        if (desempenho < 50) pontosAMelhorar.push(item);
+        else if (desempenho >= 80) pontosFortes.push(item);
+    });
+    
+    renderizarTabelaAnalise('container-pontos-melhorar', pontosAMelhorar);
+    renderizarTabelaAnalise('container-pontos-fortes', pontosFortes);
+}
+
+function renderizarTabelaAnalise(containerId, dados) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (dados.length === 0) {
+        container.innerHTML = '<p style="padding: 20px 0;">Nenhum conteúdo encontrado para esta categoria.</p>';
+        return;
+    }
+    
+    dados.sort((a, b) => a.desempenho - b.desempenho);
+    if(containerId.includes('fortes')) dados.reverse();
+
+    container.innerHTML = `<table class="tabela-analise">
+        <thead><tr><th>Matéria</th><th>Conteúdo</th><th>Questões</th><th>Acertos</th><th>Desempenho</th><th>Último Registro</th></tr></thead>
+        <tbody>
+            ${dados.map(d => `<tr><td>${d.materia}</td><td>${d.conteudoOriginal}</td><td>${d.questoes}</td><td>${d.acertos}</td><td>${d.desempenho}%</td><td>${d.ultimaData.toLocaleDateString('pt-br')}</td></tr>`).join('')}
+        </tbody>
+    </table>`;
 }

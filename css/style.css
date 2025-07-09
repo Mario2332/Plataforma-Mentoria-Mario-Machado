@@ -784,3 +784,32 @@ main {
     font-weight: bold;
     cursor: help;
 }
+
+/* Adicionado para estabilizar o layout das sub-abas */
+.sub-page-wrapper {
+    margin-top: 30px;
+}
+
+/* Ajusta o estilo da tabela de análise para ser igual à de histórico */
+.tabela-analise {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.tabela-analise th, .tabela-analise td {
+    padding: 12px 15px;
+    text-align: left;
+}
+.tabela-analise thead tr {
+    border-bottom: 2px solid #e0e0e0;
+}
+.tabela-analise th {
+    font-weight: 600;
+    color: #333;
+}
+.tabela-analise tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+.tabela-analise tbody tr:last-child {
+    border-bottom: none;
+}

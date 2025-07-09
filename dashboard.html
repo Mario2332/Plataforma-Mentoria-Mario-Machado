@@ -73,52 +73,38 @@
             </section>
 
             <section id="minhas-metricas" class="hidden">
-                <h2>Painel de Métricas</h2>
-                <div class="sub-nav">
-                    <button id="btn-subnav-metricas" class="btn-subnav active">Minhas Métricas</button>
-                    <button id="btn-subnav-pontos" class="btn-subnav">Pontos Fortes & A Melhorar</button>
-                </div>
+    <h2>Painel de Métricas</h2>
+    <div class="sub-nav">
+        <button id="btn-subnav-metricas" class="btn-subnav active">Minhas Métricas</button>
+        <button id="btn-subnav-pontos" class="btn-subnav">Pontos Fortes e A Melhorar</button>
+    </div>
 
-                <div id="sub-page-metricas">
-                    <div class="metricas-grid">
-                        <div class="grid-item" id="coluna-stats">
-                            <div class="stat-card"><h4>Tempo Total de Estudo</h4><p id="stat-tempo-total">--</p></div>
-                            <div class="stat-card"><h4>Total de Questões</h4><p id="stat-questoes-total">--</p></div>
-                            <div class="stat-card"><h4>Total de Acertos</h4><p id="stat-acertos-total">--</p></div>
-                            <div class="stat-card"><h4>Desempenho Geral</h4><p id="stat-desempenho-geral">--</p></div>
-                        </div>
-                        <div class="grid-item" id="coluna-heatmap">
-                            <div class="heatmap-container"><h4>Mapa de Atividades (Últimos 90 dias)</h4><div id="heatmap-calendario"></div><div class="sequencia-container"><h4>Sequência de Estudos</h4><p id="stat-sequencia">0 dias</p></div></div>
-                        </div>
-                        <div class="grid-item" id="coluna-donut">
-                            <div class="chart-container"><h3>Desempenho Geral</h3><canvas id="grafico-desempenho-geral"></canvas></div>
-                        </div>
-                        <div class="grid-item" id="item-semanal">
-                            <div class="chart-container"><h3>Desempenho nos Últimos 7 Dias</h3><canvas id="grafico-semanal"></canvas></div>
-                        </div>
-                        <div class="grid-item" id="item-desempenho-materia">
-                            <div class="chart-container"><h3>Desempenho (%) por Matéria</h3><canvas id="grafico-desempenho"></canvas></div>
-                        </div>
-                        <div class="grid-item" id="item-questoes-materia">
-                            <div class="chart-container"><h3>Questões Feitas por Matéria</h3><canvas id="grafico-materias"></canvas></div>
-                        </div>
-                        <div class="grid-item" id="item-flashcards-materia">
-                            <div class="chart-container"><h3>Flashcards Feitos por Matéria</h3><canvas id="grafico-flashcards-materia"></canvas></div>
-                        </div>
+    <div class="sub-page-wrapper">
+        <div id="sub-page-metricas">
+            <div class="metricas-grid">
+                </div>
+        </div>
+
+        <div id="sub-page-pontos" class="hidden">
+            <details class="bloco-analise" open>
+                <summary>
+                    Pontos a Melhorar
+                    <span class="info-icon" title="Conteúdos com desempenho abaixo de 50%">&#x24D8;</span>
+                </summary>
+                <div class="tabela-container" id="container-pontos-melhorar">
                     </div>
-                </div>
-
-                <div id="sub-page-pontos" class="hidden">
-                    <details class="bloco-analise" open>
-                        <summary>Pontos a Melhorar <span class="info-icon" title="Conteúdos com desempenho abaixo de 50%">&#x24D8;</span></summary>
-                        <div class="tabela-container" id="container-pontos-melhorar"></div>
-                    </details>
-                    <details class="bloco-analise" open>
-                        <summary>Pontos Fortes <span class="info-icon" title="Conteúdos com desempenho igual ou acima de 80%">&#x24D8;</span></summary>
-                        <div class="tabela-container" id="container-pontos-fortes"></div>
-                    </details>
-                </div>
-            </section>
+            </details>
+            <details class="bloco-analise" open>
+                <summary>
+                    Pontos Fortes
+                    <span class="info-icon" title="Conteúdos com desempenho igual ou acima de 80%">&#x24D8;</span>
+                </summary>
+                <div class="tabela-container" id="container-pontos-fortes">
+                    </div>
+            </details>
+        </div>
+    </div>
+</section>
 
             <section id="historico-estudos" class="hidden">
                 <h2>Histórico de Estudos</h2>
