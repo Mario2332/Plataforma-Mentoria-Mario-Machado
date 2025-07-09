@@ -722,12 +722,12 @@ main {
 }
 
 /* ================================================================= */
-/* ESTILOS DA NOVA ÁREA DE ANÁLISE (VERSÃO COM AJUSTES FINAIS)    */
+/* ESTILOS DA NOVA ÁREA DE ANÁLISE (VERSÃO DEFINITIVA)            */
 /* ================================================================= */
 
 /* Container da sub-navegação */
 .sub-nav {
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     display: flex;
     gap: 10px;
     border-bottom: 2px solid #e0e0e0;
@@ -750,26 +750,30 @@ main {
     border-bottom-color: #007BFF;
 }
 
-/* Container que envolve as duas sub-páginas */
+/* CORREÇÃO DO LAYOUT MÓVEL */
+/* Este contêiner agora usa grid para sobrepor as duas sub-páginas */
 .sub-page-wrapper {
     margin-top: 30px;
+    min-height: 1200px; /* Garante que a área de conteúdo nunca encolha abaixo desta altura */
 }
-
-/* NOVO: Adiciona uma estrutura de grid à página de análise para estabilizar o layout */
-#sub-page-pontos {
-    display: grid;
-    grid-template-columns: 1fr; /* Apenas uma coluna */
-    gap: 30px; /* Mesmo espaçamento do outro grid para consistência */
+#sub-page-metricas, #sub-page-pontos {
+    /* Coloca ambas as páginas na mesma célula do grid, uma sobre a outra */
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    /* A classe .hidden fará o resto, mostrando apenas uma de cada vez */
 }
 
 
 /* Blocos retráteis (Pontos Fortes / A Melhorar) */
 .bloco-analise {
-    margin-bottom: 0; /* A margem agora é controlada pelo gap do grid */
+    margin-bottom: 30px;
     border: 1px solid #e9edf2;
     border-radius: 12px;
     background-color: #ffffff; 
     overflow: hidden; 
+}
+.bloco-analise:last-child {
+    margin-bottom: 0;
 }
 
 .bloco-analise summary {
@@ -782,7 +786,7 @@ main {
     color: #1c3d5a;
     cursor: pointer;
     background-color: #f8f9fa; 
-    list-style: none; 
+    list-style: none;
 }
 
 .bloco-analise summary::-webkit-details-marker {
@@ -807,22 +811,14 @@ main {
     border-top: 1px solid #e9edf2;
 }
 
-/* CORREÇÃO: Ícone de informação 'i' refeito com borda clara */
+/* CORREÇÃO DO ÍCONE 'i' COM SVG */
 .info-icon {
     display: inline-flex;
-    justify-content: center;
     align-items: center;
-    width: 20px;
-    height: 20px;
-    background-color: transparent; /* Fundo transparente */
-    border: 2px solid #adb5bd;    /* Borda cinza clara (o círculo claro) */
-    border-radius: 50%;
-    color: #adb5bd;               /* Cor da letra 'i' para combinar */
-    font-size: 14px;
-    line-height: 1; /* Alinhamento vertical preciso */
-    font-weight: bold;
+    justify-content: center;
     cursor: help;
-    outline: none; /* Garante que não haverá um segundo círculo */
+    /* Estiliza o SVG que está dentro do span */
+    stroke: #adb5bd; /* Define a cor da linha do SVG */
 }
 
 /* Tabela de análise dentro dos blocos */
