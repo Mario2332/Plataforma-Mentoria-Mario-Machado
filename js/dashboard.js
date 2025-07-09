@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT DO DASHBOARD (VERSÃO FINAL E COMPLETA) - PARTE 1
+// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM TODAS AS FUNÇÕES)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -18,9 +18,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Variáveis globais
+// Variáveis globais de estado
 let meusRegistros = []; 
-let sortState = { column: 'dataRegistro', direction: 'desc' };
+let sortStateHistorico = { column: 'dataRegistro', direction: 'desc' };
+let sortStateMelhorar = { column: 'desempenho', direction: 'asc' };
+let sortStateFortes = { column: 'desempenho', direction: 'desc' };
+
 const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Filosofia", "Sociologia", "Linguagens"];
 let todosOsGraficos = {};
 const pluginTextoNoCentro = { id: 'text-center', afterDatasetsDraw(chart) { const { ctx, data } = chart; const text = data.datasets[0].text; if (!text) return; ctx.save(); const x = chart.getDatasetMeta(0).data[0].x; const y = chart.getDatasetMeta(0).data[0].y; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = '#1c3d5a'; ctx.fillText(text, x, y); ctx.restore(); } };
@@ -36,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     configurarNavegacao(alunoId);
     configurarFormulario(alunoId);
-    configurarCabecalhosTabela();
+    configurarTabelasOrdenaveis();
     configurarModalPrincipal();
     
     const nomeAluno = sessionStorage.getItem('alunoNome');
@@ -71,7 +74,6 @@ function configurarNavegacao(alunoId) {
         Object.keys(navItems).forEach(key => navItems[key]?.classList.remove('active'));
         navItems[abaAtiva]?.classList.add('active');
         if (abaAtiva === 'metricas') {
-            // Ao ir para o painel, sempre mostra a sub-aba de métricas primeiro
             mudarSubAba('metricas');
         }
     }
@@ -118,40 +120,64 @@ function configurarFormulario(alunoId) {
     });
 }
 
-function configurarCabecalhosTabela() {
-    document.querySelectorAll('#tabela-historico th.sortable').forEach(header => {
-        header.addEventListener('click', () => {
-            const column = header.dataset.sort; if (!column) return;
-            const direction = sortState.column === column && sortState.direction === 'desc' ? 'asc' : 'desc';
-            sortState = { column, direction };
-            document.querySelectorAll('#tabela-historico th.sortable').forEach(th => th.classList.remove('active-sort'));
-            header.classList.add('active-sort');
-            renderizarHistorico();
-        });
+function configurarTabelasOrdenaveis() {
+    document.getElementById('tabela-historico').querySelector('thead').addEventListener('click', (e) => {
+        const header = e.target.closest('th');
+        if (!header || !header.classList.contains('sortable')) return;
+        const column = header.dataset.sort;
+        const direction = sortStateHistorico.column === column && sortStateHistorico.direction === 'desc' ? 'asc' : 'desc';
+        sortStateHistorico = { column, direction };
+        renderizarHistorico();
+    });
+
+    document.getElementById('container-pontos-melhorar').addEventListener('click', (e) => {
+        const header = e.target.closest('th');
+        if (!header || !header.classList.contains('sortable')) return;
+        const column = header.dataset.sort;
+        const direction = sortStateMelhorar.column === column && sortStateMelhorar.direction === 'desc' ? 'asc' : 'desc';
+        sortStateMelhorar = { column, direction };
+        processarAnalisePontos();
+    });
+
+    document.getElementById('container-pontos-fortes').addEventListener('click', (e) => {
+        const header = e.target.closest('th');
+        if (!header || !header.classList.contains('sortable')) return;
+        const column = header.dataset.sort;
+        const direction = sortStateFortes.column === column && sortStateFortes.direction === 'desc' ? 'asc' : 'desc';
+        sortStateFortes = { column, direction };
+        processarAnalisePontos();
     });
 }
 
 function renderizarHistorico() {
     const tbody = document.querySelector('#tabela-historico tbody');
     if (!tbody) return;
-    meusRegistros.sort((a, b) => {
-        let valA = a[sortState.column]; let valB = b[sortState.column];
-        if (sortState.column === 'desempenho') {
+    
+    // Ordena a cópia dos registros para não afetar a ordem original
+    const registrosOrdenados = [...meusRegistros].sort((a, b) => {
+        let valA = a[sortStateHistorico.column]; 
+        let valB = b[sortStateHistorico.column];
+        
+        if (sortStateHistorico.column === 'desempenho') {
             valA = a.questoesFeitas > 0 ? (a.questoesAcertadas / a.questoesFeitas) : -1;
             valB = b.questoesFeitas > 0 ? (b.questoesAcertadas / b.questoesFeitas) : -1;
         }
+        
         if (valA?.toDate) valA = valA.toDate();
         if (valB?.toDate) valB = valB.toDate();
-        if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
-        if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
+
+        if (valA < valB) return sortStateHistorico.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortStateHistorico.direction === 'asc' ? 1 : -1;
         return 0;
     });
+
     tbody.innerHTML = ''; 
-    if (meusRegistros.length === 0) {
+    if (registrosOrdenados.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum registro de estudo encontrado.</td></tr>';
         return;
     }
-    meusRegistros.forEach((reg) => {
+
+    registrosOrdenados.forEach((reg) => {
         const tr = document.createElement('tr');
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
@@ -166,27 +192,63 @@ function renderizarHistorico() {
             </div></td>`;
         tbody.appendChild(tr);
     });
+
     document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', abrirFormularioEdicao));
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', deletarRegistro));
+    
+    document.querySelectorAll('#tabela-historico th.sortable').forEach(th => {
+        th.classList.remove('active-sort');
+        if (th.dataset.sort === sortStateHistorico.column) {
+            th.classList.add('active-sort');
+        }
+    });
 }
 
 function abrirFormularioEdicao(event) {
     const docId = event.currentTarget.dataset.id;
     const registro = meusRegistros.find(r => r.id === docId);
     if (!registro) return;
-    const formHTML = `<h2>Editar Registro</h2><form id="form-edicao" data-id="${docId}">
-        <div class="form-group"><label for="edit-materia">Matéria:</label><select id="edit-materia" required>${TODAS_AS_MATERIAS.map(m => `<option value="${m}" ${m === registro.materia ? 'selected' : ''}>${m}</option>`).join('')}</select></div>
-        <div class="form-group"><label for="edit-conteudo">Conteúdo:</label><input type="text" id="edit-conteudo" value="${registro.conteudo || ''}"></div>
-        <div class="form-group"><label for="edit-tempo">Tempo (min):</label><input type="number" id="edit-tempo" value="${registro.tempoEstudado || 0}" required min="1"></div>
-        <div class="form-group"><label for="edit-questoes">Questões:</label><input type="number" id="edit-questoes" value="${registro.questoesFeitas || 0}" min="0"></div>
-        <div class="form-group"><label for="edit-acertos">Acertos:</label><input type="number" id="edit-acertos" value="${registro.questoesAcertadas || 0}" min="0"></div>
-        <div class="form-group"><label for="edit-flashcards">Flashcards:</label><input type="number" id="edit-flashcards" value="${registro.flashcardsFeitos || 0}" min="0"></div>
-        <div class="modal-buttons"><button type="button" class="modal-btn btn-cancel">Cancelar</button><button type="submit" class="modal-btn edit-btn">Salvar Alterações</button></div>
+
+    const formHTML = `
+        <h2>Editar Registro</h2>
+        <form id="form-edicao" data-id="${docId}">
+            <div class="form-group">
+                <label for="edit-materia">Matéria:</label>
+                <select id="edit-materia" required>
+                    ${TODAS_AS_MATERIAS.map(m => `<option value="${m}" ${m === registro.materia ? 'selected' : ''}>${m}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="edit-conteudo">Conteúdo:</label>
+                <input type="text" id="edit-conteudo" value="${registro.conteudo || ''}">
+            </div>
+            <div class="form-group">
+                <label for="edit-tempo">Tempo (min):</label>
+                <input type="number" id="edit-tempo" value="${registro.tempoEstudado || 0}" required min="1">
+            </div>
+            <div class="form-group">
+                <label for="edit-questoes">Questões:</label>
+                <input type="number" id="edit-questoes" value="${registro.questoesFeitas || 0}" min="0">
+            </div>
+            <div class="form-group">
+                <label for="edit-acertos">Acertos:</label>
+                <input type="number" id="edit-acertos" value="${registro.questoesAcertadas || 0}" min="0">
+            </div>
+            <div class="form-group">
+                <label for="edit-flashcards">Flashcards:</label>
+                <input type="number" id="edit-flashcards" value="${registro.flashcardsFeitos || 0}" min="0">
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="modal-btn btn-cancel">Cancelar</button>
+                <button type="submit" class="modal-btn edit-btn">Salvar Alterações</button>
+            </div>
         </form>`;
+    
     showCustomModal(formHTML);
     document.getElementById('form-edicao').addEventListener('submit', salvarEdicao);
     document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
 }
+
 async function salvarEdicao(event) {
     event.preventDefault();
     const docId = event.currentTarget.dataset.id;
@@ -198,22 +260,25 @@ async function salvarEdicao(event) {
         questoesAcertadas: Number(document.getElementById('edit-acertos').value),
         flashcardsFeitos: Number(document.getElementById('edit-flashcards').value),
     };
+
     try {
         const docRef = doc(db, 'registros', docId);
         await updateDoc(docRef, dadosAtualizados);
+        
         const index = meusRegistros.findIndex(r => r.id === docId);
         meusRegistros[index] = { ...meusRegistros[index], ...dadosAtualizados };
+
         renderizarHistorico();
         hideCustomModal();
         showCustomAlert("Registro atualizado com sucesso!");
-    } catch (error) { 
-        console.error("Erro ao atualizar o documento:", error);
-        showCustomAlert("Falha ao atualizar o registro.", "erro"); 
+    } catch (error) {
+        showCustomAlert("Falha ao atualizar o registro.", "erro");
     }
 }
 
 async function deletarRegistro(event) {
     const docId = event.currentTarget.dataset.id;
+    
     const fazerExclusao = async () => {
         try {
             await deleteDoc(doc(db, "registros", docId));
@@ -222,17 +287,16 @@ async function deletarRegistro(event) {
             processarMetricas();
             showCustomAlert("Registro excluído com sucesso.");
         } catch (error) { 
-            console.error("Erro ao excluir o documento:", error);
-            showCustomAlert("Falha ao excluir o registro.", "erro"); 
+            showCustomAlert("Falha ao excluir o registro.", "erro");
         }
     };
+
     showCustomConfirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.", fazerExclusao);
 }
 
 function configurarModalPrincipal() {
     const modal = document.getElementById('main-modal');
     modal.addEventListener('click', (e) => {
-        // Fecha se clicar no X ou fora do conteúdo
         if (e.target.classList.contains('close-modal-btn') || e.target === modal) {
             hideCustomModal();
         }
@@ -240,10 +304,8 @@ function configurarModalPrincipal() {
 }
 
 function showCustomModal(contentHTML) {
-    const modalBody = document.getElementById('modal-body');
-    const modalContainer = document.getElementById('main-modal');
-    modalBody.innerHTML = contentHTML;
-    modalContainer.classList.remove('hidden');
+    document.getElementById('modal-body').innerHTML = contentHTML;
+    document.getElementById('main-modal').classList.remove('hidden');
 }
 
 function hideCustomModal() {
@@ -390,30 +452,51 @@ function processarAnalisePontos() {
     const pontosAMelhorar = [], pontosFortes = [];
     Object.values(dadosPorConteudo).forEach(dado => {
         const desempenho = (dado.acertos / dado.questoes) * 100;
-        const item = { ...dado, desempenho: desempenho.toFixed(1) };
+        const item = { ...dado, desempenho: desempenho };
         if (desempenho < 50) pontosAMelhorar.push(item);
         else if (desempenho >= 80) pontosFortes.push(item);
     });
     
-    renderizarTabelaAnalise('container-pontos-melhorar', pontosAMelhorar);
-    renderizarTabelaAnalise('container-pontos-fortes', pontosFortes);
+    renderizarTabelaAnalise('container-pontos-melhorar', pontosAMelhorar, sortStateMelhorar);
+    renderizarTabelaAnalise('container-pontos-fortes', pontosFortes, sortStateFortes);
 }
 
-function renderizarTabelaAnalise(containerId, dados) {
+function renderizarTabelaAnalise(containerId, dados, sortState) {
     const container = document.getElementById(containerId);
     if (!container) return;
+    
+    dados.sort((a, b) => {
+        let valA = a[sortState.column]; let valB = b[sortState.column];
+        if(valA?.toDate) valA = valA.toDate();
+        if(valB?.toDate) valB = valB.toDate();
+        if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+
     if (dados.length === 0) {
         container.innerHTML = '<p style="padding: 20px 0;">Nenhum conteúdo encontrado para esta categoria.</p>';
         return;
     }
-    
-    dados.sort((a, b) => a.desempenho - b.desempenho);
-    if(containerId.includes('fortes')) dados.reverse();
+
+    let headers = `
+        <th class="sortable" data-sort="materia">Matéria</th>
+        <th class="sortable" data-sort="conteudoOriginal">Conteúdo</th>
+        <th class="sortable" data-sort="questoes">Questões</th>
+        <th class="sortable" data-sort="acertos">Acertos</th>
+        <th class="sortable" data-sort="desempenho">Desempenho</th>
+        <th class="sortable" data-sort="ultimaData">Último Registro</th>`;
 
     container.innerHTML = `<table class="tabela-analise">
-        <thead><tr><th>Matéria</th><th>Conteúdo</th><th>Questões</th><th>Acertos</th><th>Desempenho</th><th>Último Registro</th></tr></thead>
+        <thead><tr>${headers}</tr></thead>
         <tbody>
-            ${dados.map(d => `<tr><td>${d.materia}</td><td>${d.conteudoOriginal}</td><td>${d.questoes}</td><td>${d.acertos}</td><td>${d.desempenho}%</td><td>${d.ultimaData.toLocaleDateString('pt-br')}</td></tr>`).join('')}
+            ${dados.map(d => `<tr><td>${d.materia}</td><td>${d.conteudoOriginal}</td><td>${d.questoes}</td><td>${d.acertos}</td><td>${d.desempenho.toFixed(1)}%</td><td>${d.ultimaData.toLocaleDateString('pt-br')}</td></tr>`).join('')}
         </tbody>
     </table>`;
+    
+    container.querySelectorAll('th.sortable').forEach(th => {
+        if (th.dataset.sort === sortState.column) {
+            th.classList.add('active-sort');
+        }
+    });
 }
