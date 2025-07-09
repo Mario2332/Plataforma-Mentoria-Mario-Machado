@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT FINAL DO DASHBOARD (COM CRONÔMETRO E TODAS AS FUNÇÕES)
+// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM TODAS AS FUNÇÕES)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -62,7 +62,7 @@ async function carregarDadosIniciais(alunoId) {
     } catch (error) { console.error("Erro ao buscar dados iniciais: ", error); }
 }
 
-function configurarNavegacao() {
+function configurarNavegacao(alunoId) {
     const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico'), cronometro: document.getElementById('nav-cronometro') };
     const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos'), cronometro: document.getElementById('cronometro-estudos') };
     
@@ -94,8 +94,10 @@ function configurarNavegacao() {
         if(navItems[key]) navItems[key].addEventListener('click', (e) => { e.preventDefault(); mudarAbaPrincipal(key); });
     });
     
-    btnSubNavMetricas.addEventListener('click', () => mudarSubAba('metricas'));
-    btnSubNavPontos.addEventListener('click', () => mudarSubAba('pontos'));
+    if (btnSubNavMetricas && btnSubNavPontos) {
+        btnSubNavMetricas.addEventListener('click', () => mudarSubAba('metricas'));
+        btnSubNavPontos.addEventListener('click', () => mudarSubAba('pontos'));
+    }
 }
 
 function configurarFormulario(alunoId) {
@@ -155,6 +157,7 @@ function renderizarHistorico() {
     const tbody = document.querySelector('#tabela-historico tbody');
     if (!tbody) return;
     
+    // Ordena uma cópia dos registros para não afetar a ordem original ao salvar
     const registrosOrdenados = [...meusRegistros].sort((a, b) => {
         let valA = a[sortStateHistorico.column]; 
         let valB = b[sortStateHistorico.column];
@@ -180,23 +183,29 @@ function renderizarHistorico() {
 
     registrosOrdenados.forEach((reg) => {
         const tr = document.createElement('tr');
+        // Guarda o ID do documento na linha da tabela para fácil acesso
+        tr.dataset.id = reg.id; 
+        
         const desempenho = reg.questoesFeitas > 0 ? ((reg.questoesAcertadas / reg.questoesFeitas) * 100).toFixed(1) + '%' : 'N/A';
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
+        
         tr.innerHTML = `
             <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.conteudo || ''}</td>
             <td>${reg.tempoEstudado || 0}</td><td>${reg.questoesFeitas || 0}</td>
             <td>${reg.questoesAcertadas || 0}</td><td>${desempenho}</td>
             <td>${reg.flashcardsFeitos || 0}</td>
             <td><div class="action-buttons">
-                <button class="action-btn edit-btn" data-id="${reg.id}" title="Editar">✏️</button>
-                <button class="action-btn delete-btn" data-id="${reg.id}" title="Excluir">🗑️</button>
+                <button class="action-btn edit-btn" title="Editar">✏️</button>
+                <button class="action-btn delete-btn" title="Excluir">🗑️</button>
             </div></td>`;
         tbody.appendChild(tr);
     });
 
-    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', abrirFormularioEdicao));
-    document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', deletarRegistro));
+    // Adiciona os eventos aos novos botões
+    tbody.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', abrirFormularioEdicao));
+    tbody.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', deletarRegistro));
     
+    // Atualiza o visual dos cabeçalhos
     document.querySelectorAll('#tabela-historico th.sortable').forEach(th => {
         th.classList.remove('active-sort');
         if (th.dataset.sort === sortStateHistorico.column) {
@@ -206,7 +215,7 @@ function renderizarHistorico() {
 }
 
 function abrirFormularioEdicao(event) {
-    const docId = event.currentTarget.dataset.id;
+    const docId = event.currentTarget.closest('tr').dataset.id;
     const registro = meusRegistros.find(r => r.id === docId);
     if (!registro) return;
 
@@ -278,7 +287,8 @@ async function salvarEdicao(event) {
 }
 
 async function deletarRegistro(event) {
-    const docId = event.currentTarget.dataset.id;
+    const docId = event.currentTarget.closest('tr').dataset.id;
+    
     const fazerExclusao = async () => {
         try {
             await deleteDoc(doc(db, "registros", docId));
@@ -304,10 +314,8 @@ function configurarModalPrincipal() {
 }
 
 function showCustomModal(contentHTML) {
-    const modalBody = document.getElementById('modal-body');
-    const modalContainer = document.getElementById('main-modal');
-    modalBody.innerHTML = contentHTML;
-    modalContainer.classList.remove('hidden');
+    document.getElementById('modal-body').innerHTML = contentHTML;
+    document.getElementById('main-modal').classList.remove('hidden');
 }
 
 function hideCustomModal() {
@@ -345,6 +353,7 @@ function processarMetricas() {
     const grid = document.querySelector('#sub-page-metricas .metricas-grid');
     if (!grid) return;
     
+    // Popula a estrutura do grid de métricas se estiver vazia
     if (!grid.innerHTML.trim()) {
         grid.innerHTML = `
             <div class="grid-item" id="coluna-stats"><div class="stat-card"><h4>Tempo Total de Estudo</h4><p id="stat-tempo-total">--</p></div><div class="stat-card"><h4>Total de Questões</h4><p id="stat-questoes-total">--</p></div><div class="stat-card"><h4>Total de Acertos</h4><p id="stat-acertos-total">--</p></div><div class="stat-card"><h4>Desempenho Geral</h4><p id="stat-desempenho-geral">--</p></div></div>
@@ -501,4 +510,71 @@ function renderizarTabelaAnalise(containerId, dados, sortState) {
             th.classList.add('active-sort');
         }
     });
+}
+
+function configurarCronometro(alunoId) {
+    const btnStart = document.getElementById('btn-start');
+    const btnPause = document.getElementById('btn-pause');
+    const btnReset = document.getElementById('btn-reset');
+    const formCronometro = document.getElementById('form-cronometro');
+
+    if(!btnStart || !btnPause || !btnReset || !formCronometro) return;
+
+    btnStart.addEventListener('click', () => {
+        if (cronometroAtivo) return;
+        cronometroAtivo = true;
+        cronometroInterval = setInterval(() => {
+            tempoEmSegundos++;
+            atualizarDisplayCronometro();
+        }, 1000);
+    });
+
+    btnPause.addEventListener('click', () => {
+        clearInterval(cronometroInterval);
+        cronometroAtivo = false;
+    });
+
+    btnReset.addEventListener('click', () => {
+        clearInterval(cronometroInterval);
+        cronometroAtivo = false;
+        tempoEmSegundos = 0;
+        atualizarDisplayCronometro();
+    });
+
+    formCronometro.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (tempoEmSegundos < 60) {
+            showCustomAlert("Você precisa cronometrar pelo menos 1 minuto para salvar.", "erro");
+            return;
+        }
+        const tempoFinalEmMinutos = Math.round(tempoEmSegundos / 60);
+        
+        const novoRegistro = {
+            alunoId,
+            materia: document.getElementById('cronometro-materia').value,
+            conteudo: document.getElementById('cronometro-conteudo').value,
+            tempoEstudado: tempoFinalEmMinutos,
+            questoesFeitas: Number(document.getElementById('cronometro-questoes').value) || 0,
+            questoesAcertadas: Number(document.getElementById('cronometro-acertos').value) || 0,
+            flashcardsFeitos: Number(document.getElementById('cronometro-flashcards').value) || 0,
+            dataRegistro: Timestamp.fromDate(new Date())
+        };
+        try {
+            const docRef = await addDoc(collection(db, "registros"), novoRegistro);
+            meusRegistros.push({ id: docRef.id, ...novoRegistro });
+            renderizarHistorico();
+            showCustomAlert(`Sessão de ${tempoFinalEmMinutos} minuto(s) salva com sucesso!`);
+            formCronometro.reset();
+            btnReset.click();
+        } catch (e) { showCustomAlert("Ocorreu um erro ao salvar a sessão.", "erro"); }
+    });
+}
+
+function atualizarDisplayCronometro() {
+    const display = document.getElementById('cronometro-display');
+    if(!display) return;
+    const horas = Math.floor(tempoEmSegundos / 3600);
+    const minutos = Math.floor((tempoEmSegundos % 3600) / 60);
+    const segundos = tempoEmSegundos % 60;
+    display.textContent = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
 }

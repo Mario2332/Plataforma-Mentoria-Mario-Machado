@@ -149,13 +149,22 @@ body.dashboard-body {
 .main-content h2 { font-size: 28px; color: #1c3d5a; margin-top: 0; margin-bottom: 30px; }
 .hidden { display: none !important; }
 
-/* --- SEÇÃO DE REGISTRO DE ESTUDOS --- */
-#registro-estudos form { max-width: 700px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 12px; border: 1px solid #e9edf2; box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06); }
-#registro-estudos .form-group { margin-bottom: 20px; }
-#registro-estudos label { display: block; margin-bottom: 8px; font-weight: 500; color: #374151; }
-#registro-estudos input, #registro-estudos select { width: 100%; padding: 12px 15px; font-size: 15px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
-#registro-estudos input:focus, #registro-estudos select:focus { outline: none; border-color: #007BFF; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
-#registro-estudos button[type="submit"] { display: block; width: auto; min-width: 200px; margin: 20px auto 0 auto; padding: 12px 35px; background-color: #007BFF; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+/* --- ESTILO PADRÃO PARA FORMULÁRIOS EM CARD --- */
+.form-card {
+    max-width: 700px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    border: 1px solid #e9edf2;
+    box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06);
+}
+
+.form-card .form-group { margin-bottom: 20px; }
+.form-card label { display: block; margin-bottom: 8px; font-weight: 500; color: #374151; }
+.form-card input, .form-card select { width: 100%; padding: 12px 15px; font-size: 15px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; }
+.form-card input:focus, .form-card select:focus { outline: none; border-color: #007BFF; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
+.form-card button[type="submit"] { display: block; width: auto; min-width: 200px; margin: 20px auto 0 auto; padding: 12px 35px; background-color: #007BFF; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
 
 /* --- SEÇÃO PAINEL DE MÉTRICAS E SUB-ABAS --- */
 .sub-nav { margin-bottom: 20px; display: flex; gap: 10px; border-bottom: 2px solid #e5e7eb; }
