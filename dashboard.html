@@ -51,11 +51,11 @@
                     </div>
                     <div class="form-group">
                         <label for="conteudo">Conteúdo estudado:</label>
-                        <input type="text" id="conteudo" name="conteudo" placeholder="Ex: Análise Combinatória, Revolução Francesa" required>
+                        <input type="text" id="conteudo" name="conteudo" placeholder="Ex: Análise Combinatória, Revolução Francesa">
                     </div>
                     <div class="form-group">
                         <label for="tempo">Tempo de estudo (minutos):</label>
-                        <input type="number" id="tempo" name="tempo" required min="1">
+                        <input type="number" id="tempo" name="tempo" min="1">
                     </div>
                     <div class="form-group">
                         <label for="questoes">Questões feitas:</label>
@@ -134,55 +134,57 @@
             </section>
             <section id="cronometro-estudos" class="hidden">
     <h2>Cronômetro de Estudos</h2>
-    <div class="cronometro-wrapper">
-
+    
+    <div class="cronometro-card">
         <div class="cronometro-display-container">
             <div id="cronometro-display">00:00:00</div>
             <div class="cronometro-controles">
                 <button id="btn-start" class="cronometro-btn start-btn">▶ Iniciar</button>
                 <button id="btn-pause" class="cronometro-btn pause-btn">⏸ Pausar</button>
-                <button id="btn-reset" class="cronometro-btn reset-btn">⏹ Parar e Resetar</button>
+                <button id="btn-reset" class="cronometro-btn reset-btn">⏹ Resetar</button>
+                <button id="btn-salvar-cronometro" class="cronometro-btn salvar-btn">💾 Salvar Sessão</button>
             </div>
         </div>
 
-        <div class="cronometro-form-container form-card">
+        <div class="cronometro-form-container">
             <form id="form-cronometro">
-                <h3>Registrar Sessão Cronometrada</h3>
-                <div class="form-group">
-                    <label for="cronometro-materia">Matéria:</label>
-                    <select id="cronometro-materia" name="materia" required>
-                        <option value="" disabled selected>Selecione a matéria</option>
-                        <option value="Matemática">Matemática</option>
-                        <option value="Física">Física</option>
-                        <option value="Química">Química</option>
-                        <option value="Biologia">Biologia</option>
-                        <option value="História">História</option>
-                        <option value="Geografia">Geografia</option>
-                        <option value="Filosofia">Filosofia</option>
-                        <option value="Sociologia">Sociologia</option>
-                        <option value="Linguagens">Linguagens</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cronometro-materia">Matéria</label>
+                        <select id="cronometro-materia" name="materia">
+                            <option value="" disabled selected>Selecione</option>
+                            <option value="Matemática">Matemática</option>
+                            <option value="Física">Física</option>
+                            <option value="Química">Química</option>
+                            <option value="Biologia">Biologia</option>
+                            <option value="História">História</option>
+                            <option value="Geografia">Geografia</option>
+                            <option value="Filosofia">Filosofia</option>
+                            <option value="Sociologia">Sociologia</option>
+                            <option value="Linguagens">Linguagens</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cronometro-conteudo">Conteúdo</label>
+                        <input type="text" id="cronometro-conteudo" name="conteudo" placeholder="Opcional">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="cronometro-conteudo">Conteúdo estudado:</label>
-                    <input type="text" id="cronometro-conteudo" name="conteudo" placeholder="Ex: Eletrodinâmica" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cronometro-questoes">Questões</label>
+                        <input type="number" id="cronometro-questoes" name="questoes" min="0" placeholder="Opcional">
+                    </div>
+                    <div class="form-group">
+                        <label for="cronometro-acertos">Acertos</label>
+                        <input type="number" id="cronometro-acertos" name="acertos" min="0" placeholder="Opcional">
+                    </div>
+                    <div class="form-group">
+                        <label for="cronometro-flashcards">Flashcards</label>
+                        <input type="number" id="cronometro-flashcards" name="flashcards" min="0" placeholder="Opcional">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="cronometro-questoes">Questões feitas:</label>
-                    <input type="number" id="cronometro-questoes" name="questoes" min="0">
-                </div>
-                <div class="form-group">
-                    <label for="cronometro-acertos">Acertos:</label>
-                    <input type="number" id="cronometro-acertos" name="acertos" min="0">
-                </div>
-                <div class="form-group">
-                    <label for="cronometro-flashcards">Flashcards feitos:</label>
-                    <input type="number" id="cronometro-flashcards" name="flashcards" min="0">
-                </div>
-                <button type="submit">Salvar Sessão Cronometrada</button>
             </form>
         </div>
-
     </div>
 </section>
         </main>

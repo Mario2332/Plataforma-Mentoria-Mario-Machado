@@ -261,74 +261,72 @@ th.active-sort { color: #007BFF; }
 #modal-body .modal-buttons { margin-top: 10px; }
 
 /* ========================================= */
-/* ESTILOS DA SEÇÃO DO CRONÔMETRO          */
+/* ESTILOS DA SEÇÃO DO CRONÔMETRO (REDESIGN) */
 /* ========================================= */
 
-.cronometro-wrapper {
-    display: flex;
-    gap: 40px;
-    align-items: flex-start;
-}
-
-.cronometro-display-container {
-    flex-basis: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.cronometro-card {
     background-color: #ffffff;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06);
-    border: 1px solid #e9edf2;
-}
-
-#cronometro-display {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 5rem; /* Tamanho grande para o display */
-    font-weight: bold;
-    color: #1c3d5a;
-    letter-spacing: 5px;
-    margin-bottom: 30px;
-}
-
-.cronometro-controles {
-    display: flex;
-    gap: 15px;
-}
-
-.cronometro-btn {
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    color: white;
-    transition: all 0.2s ease;
-}
-.cronometro-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.start-btn { background-color: #28a745; } /* Verde */
-.pause-btn { background-color: #ffc107; color: #1f2937;} /* Amarelo */
-.reset-btn { background-color: #dc3545; } /* Vermelho */
-
-
-.cronometro-form-container {
-    flex-basis: 50%;
-    max-width: 450px; /* Largura menor, como pedido */
-    background: #ffffff;
     padding: 30px 40px;
     border-radius: 12px;
     border: 1px solid #e9edf2;
     box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06);
+    max-width: 900px; /* Largura similar à da tabela de histórico */
+    margin: 0 auto;
 }
 
-.cronometro-form-container h3 {
-    margin-top: 0;
+.cronometro-display-container {
     text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 30px;
+    margin-bottom: 30px;
+}
+
+#cronometro-display {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-size: 4.5rem;
+    font-weight: 500;
     color: #1c3d5a;
+    margin-bottom: 25px;
+}
+
+.cronometro-controles {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap; /* Permite que os botões quebrem a linha em telas menores */
+}
+
+.cronometro-btn {
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+    color: white;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cronometro-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.start-btn { background-color: #28a745; }
+.pause-btn { background-color: #ffc107; color: #1f2937; }
+.reset-btn { background-color: #6c757d; }
+.salvar-btn { background-color: #007BFF; } /* Azul para o botão de salvar */
+
+.cronometro-form-container .form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.cronometro-form-container .form-group {
+    flex: 1; /* Faz os campos ocuparem o espaço igualmente */
+    display: flex;
+    flex-direction: column;
 }

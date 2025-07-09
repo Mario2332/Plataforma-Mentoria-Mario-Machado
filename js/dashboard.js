@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM TODAS AS FUNÇÕES)
+// SCRIPT DO DASHBOARD (COM CRONÔMETRO FUNCIONAL E CORRIGIDO)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -62,7 +62,7 @@ async function carregarDadosIniciais(alunoId) {
     } catch (error) { console.error("Erro ao buscar dados iniciais: ", error); }
 }
 
-function configurarNavegacao(alunoId) {
+function configurarNavegacao() {
     const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico'), cronometro: document.getElementById('nav-cronometro') };
     const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos'), cronometro: document.getElementById('cronometro-estudos') };
     
@@ -105,12 +105,17 @@ function configurarFormulario(alunoId) {
     if (!formRegistro) return;
     formRegistro.addEventListener('submit', async (event) => {
         event.preventDefault();
+        const materiaSelecionada = document.getElementById('materia').value;
+        if (!materiaSelecionada) {
+            showCustomAlert("Por favor, selecione a matéria estudada.", "erro");
+            return;
+        }
         const novoRegistro = {
-            alunoId, materia: document.getElementById('materia').value,
+            alunoId, materia: materiaSelecionada,
             conteudo: document.getElementById('conteudo').value,
-            tempoEstudado: Number(document.getElementById('tempo').value),
-            questoesFeitas: Number(document.getElementById('questoes').value),
-            questoesAcertadas: Number(document.getElementById('acertos').value),
+            tempoEstudado: Number(document.getElementById('tempo').value) || 0,
+            questoesFeitas: Number(document.getElementById('questoes').value) || 0,
+            questoesAcertadas: Number(document.getElementById('acertos').value) || 0,
             flashcardsFeitos: Number(document.getElementById('flashcards').value) || 0,
             dataRegistro: Timestamp.fromDate(new Date())
         };
@@ -190,14 +195,20 @@ function renderizarHistorico() {
         const data = reg.dataRegistro?.toDate ? reg.dataRegistro.toDate().toLocaleDateString('pt-BR') : 'Agora';
         
         tr.innerHTML = `
-            <td>${data}</td><td>${reg.materia || ''}</td><td>${reg.conteudo || ''}</td>
-            <td>${reg.tempoEstudado || 0}</td><td>${reg.questoesFeitas || 0}</td>
-            <td>${reg.questoesAcertadas || 0}</td><td>${desempenho}</td>
+            <td>${data}</td>
+            <td>${reg.materia || ''}</td>
+            <td>${reg.conteudo || ''}</td>
+            <td>${reg.tempoEstudado || 0}</td>
+            <td>${reg.questoesFeitas || 0}</td>
+            <td>${reg.questoesAcertadas || 0}</td>
+            <td>${desempenho}</td>
             <td>${reg.flashcardsFeitos || 0}</td>
-            <td><div class="action-buttons">
-                <button class="action-btn edit-btn" title="Editar">✏️</button>
-                <button class="action-btn delete-btn" title="Excluir">🗑️</button>
-            </div></td>`;
+            <td>
+                <div class="action-buttons">
+                    <button class="action-btn edit-btn" title="Editar">✏️</button>
+                    <button class="action-btn delete-btn" title="Excluir">🗑️</button>
+                </div>
+            </td>`;
         tbody.appendChild(tr);
     });
 
@@ -314,7 +325,10 @@ function configurarModalPrincipal() {
 }
 
 function showCustomModal(contentHTML) {
-    document.getElementById('modal-body').innerHTML = contentHTML;
+    const modalBody = document.getElementById('modal-body');
+    if(modalBody) {
+        modalBody.innerHTML = contentHTML;
+    }
     document.getElementById('main-modal').classList.remove('hidden');
 }
 
@@ -516,13 +530,16 @@ function configurarCronometro(alunoId) {
     const btnStart = document.getElementById('btn-start');
     const btnPause = document.getElementById('btn-pause');
     const btnReset = document.getElementById('btn-reset');
+    const btnSalvar = document.getElementById('btn-salvar-cronometro');
     const formCronometro = document.getElementById('form-cronometro');
 
-    if(!btnStart || !btnPause || !btnReset || !formCronometro) return;
+    if(!btnStart || !btnPause || !btnReset || !btnSalvar || !formCronometro) return;
 
     btnStart.addEventListener('click', () => {
         if (cronometroAtivo) return;
         cronometroAtivo = true;
+        btnStart.disabled = true;
+        btnPause.disabled = false;
         cronometroInterval = setInterval(() => {
             tempoEmSegundos++;
             atualizarDisplayCronometro();
@@ -532,6 +549,8 @@ function configurarCronometro(alunoId) {
     btnPause.addEventListener('click', () => {
         clearInterval(cronometroInterval);
         cronometroAtivo = false;
+        btnStart.disabled = false;
+        btnPause.disabled = true;
     });
 
     btnReset.addEventListener('click', () => {
@@ -539,19 +558,32 @@ function configurarCronometro(alunoId) {
         cronometroAtivo = false;
         tempoEmSegundos = 0;
         atualizarDisplayCronometro();
+        btnStart.disabled = false;
+        btnPause.disabled = true;
     });
 
-    formCronometro.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        if (tempoEmSegundos < 60) {
-            showCustomAlert("Você precisa cronometrar pelo menos 1 minuto para salvar.", "erro");
+    btnSalvar.addEventListener('click', async () => {
+        clearInterval(cronometroInterval);
+        cronometroAtivo = false;
+
+        const materiaSelecionada = document.getElementById('cronometro-materia').value;
+        if (!materiaSelecionada) {
+            showCustomAlert("Por favor, selecione a matéria antes de salvar.", "erro");
+            return;
+        }
+        if (tempoEmSegundos < 60 && tempoEmSegundos > 0) {
+            showCustomAlert("Sessões com menos de 1 minuto não são salvas. Continue estudando!", "info");
+            return;
+        }
+        if (tempoEmSegundos === 0) {
+             showCustomAlert("Inicie o cronômetro para registrar uma sessão.", "erro");
             return;
         }
         const tempoFinalEmMinutos = Math.round(tempoEmSegundos / 60);
         
         const novoRegistro = {
             alunoId,
-            materia: document.getElementById('cronometro-materia').value,
+            materia: materiaSelecionada,
             conteudo: document.getElementById('cronometro-conteudo').value,
             tempoEstudado: tempoFinalEmMinutos,
             questoesFeitas: Number(document.getElementById('cronometro-questoes').value) || 0,
