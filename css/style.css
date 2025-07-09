@@ -722,7 +722,7 @@ main {
 }
 
 /* ================================================================= */
-/* ESTILOS DA NOVA ÁREA DE ANÁLISE (VERSÃO REFINADA)              */
+/* ESTILOS DA NOVA ÁREA DE ANÁLISE (VERSÃO COM AJUSTES FINAIS)    */
 /* ================================================================= */
 
 /* Container da sub-navegação */
@@ -750,42 +750,47 @@ main {
     border-bottom-color: #007BFF;
 }
 
-/* Adicionado para estabilizar o layout das sub-abas */
+/* Container que envolve as duas sub-páginas */
 .sub-page-wrapper {
     margin-top: 30px;
 }
 
-/* Blocos retráteis (Pontos Fortes / A Melhorar) */
-.bloco-analise {
-    margin-bottom: 30px;
-    border: 1px solid #e9edf2;
-    border-radius: 12px;
-    background-color: #ffffff; /* Fundo branco para o conteúdo */
-    overflow: hidden; /* Garante que os cantos arredondados funcionem bem */
+/* NOVO: Adiciona uma estrutura de grid à página de análise para estabilizar o layout */
+#sub-page-pontos {
+    display: grid;
+    grid-template-columns: 1fr; /* Apenas uma coluna */
+    gap: 30px; /* Mesmo espaçamento do outro grid para consistência */
 }
 
-/* Título do bloco retrátil - AGORA COM FUNDO E SETA CUSTOMIZADA */
+
+/* Blocos retráteis (Pontos Fortes / A Melhorar) */
+.bloco-analise {
+    margin-bottom: 0; /* A margem agora é controlada pelo gap do grid */
+    border: 1px solid #e9edf2;
+    border-radius: 12px;
+    background-color: #ffffff; 
+    overflow: hidden; 
+}
+
 .bloco-analise summary {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Empurra o ícone 'i' para a direita */
+    justify-content: space-between; 
     padding: 20px;
     font-size: 20px;
     font-weight: 600;
     color: #1c3d5a;
     cursor: pointer;
-    background-color: #f8f9fa; /* Cor de fundo diferente */
-    list-style: none; /* Remove o marcador padrão (triângulo) */
+    background-color: #f8f9fa; 
+    list-style: none; 
 }
 
-/* Remove o marcador padrão em navegadores Webkit (Chrome, Safari) */
 .bloco-analise summary::-webkit-details-marker {
     display: none;
 }
 
-/* Cria a nossa nova seta customizada */
 .bloco-analise summary::before {
-    content: '›'; /* Usa o caractere de seta para a direita */
+    content: '›'; 
     font-size: 28px;
     font-weight: bold;
     margin-right: 15px;
@@ -793,7 +798,6 @@ main {
     transition: transform 0.2s ease-in-out;
 }
 
-/* Gira a seta quando o bloco está aberto */
 .bloco-analise[open] > summary::before {
     transform: rotate(90deg);
 }
@@ -803,20 +807,22 @@ main {
     border-top: 1px solid #e9edf2;
 }
 
-/* Ícone de informação 'i' - REFEITO PARA SER UM CÍRCULO ÚNICO E MENOR */
+/* CORREÇÃO: Ícone de informação 'i' refeito com borda clara */
 .info-icon {
-    display: inline-flex; /* Usamos flex para centralizar o 'i' perfeitamente */
+    display: inline-flex;
     justify-content: center;
     align-items: center;
-    width: 20px;  /* Tamanho ajustado */
-    height: 20px; /* Tamanho ajustado */
-    background-color: #6c757d; /* Cor de fundo do círculo */
-    border: none; /* Removemos a borda para evitar o efeito de "círculo duplo" */
+    width: 20px;
+    height: 20px;
+    background-color: transparent; /* Fundo transparente */
+    border: 2px solid #adb5bd;    /* Borda cinza clara (o círculo claro) */
     border-radius: 50%;
-    color: white; /* Cor da letra 'i' */
+    color: #adb5bd;               /* Cor da letra 'i' para combinar */
     font-size: 14px;
+    line-height: 1; /* Alinhamento vertical preciso */
     font-weight: bold;
     cursor: help;
+    outline: none; /* Garante que não haverá um segundo círculo */
 }
 
 /* Tabela de análise dentro dos blocos */
