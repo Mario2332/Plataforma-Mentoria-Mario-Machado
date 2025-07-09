@@ -1,12 +1,11 @@
 // =================================================================
-// SCRIPT DA PÁGINA DE LOGIN
+// SCRIPT DA PÁGINA DE LOGIN (index.html) - VERSÃO CORRIGIDA
 // =================================================================
 
-// 1. IMPORTAR AS FERRAMENTAS DO FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 2. CONFIGURAÇÃO DO FIREBASE
+// Suas credenciais do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyCL2Lx5ccKeGVpybuxKZKLRscWYbcPgjJc",
     authDomain: "mentoria-mario-machado.firebaseapp.com",
@@ -14,51 +13,63 @@ const firebaseConfig = {
     storageBucket: "mentoria-mario-machado.firebasestorage.app",
     messagingSenderId: "855508085159",
     appId: "1:855508085159:web:32f0dfe2f8244435796e82",
-  };
+    measurementId: "G-Q5603DS6NP"
+};
 
-// 3. INICIALIZAR O FIREBASE E O FIRESTORE
+// Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 4. ENCONTRAR OS ELEMENTOS HTML
-const botaoLogin = document.getElementById('botao-login');
-const campoCodigo = document.getElementById('codigo-acesso');
+// Lógica de Login
+document.addEventListener('DOMContentLoaded', function() {
+    const botaoLogin = document.getElementById('botao-login');
+    const campoCodigo = document.getElementById('codigo-acesso');
 
-// 5. FUNÇÃO PRINCIPAL DE LOGIN
-async function verificarLogin() {
-    const codigoDigitado = campoCodigo.value.trim();
+    // Função para tentar o login ao clicar no botão ou pressionar Enter
+    const tentarLogin = async () => {
+        const codigoDigitado = campoCodigo.value.trim();
 
-    if (codigoDigitado === "") {
-        alert("Por favor, digite seu código de acesso.");
-        return;
-    }
-
-    try {
-        const q = query(collection(db, "alunos"), where("codigoDeAcesso", "==", codigoDigitado));
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-            alert("Código de acesso inválido ou não encontrado.");
-        } else {
-            // ----- INÍCIO DA MUDANÇA -----
-            // Pegamos os dados do primeiro documento que a consulta encontrou
-            const doc = querySnapshot.docs[0];
-            const aluno = doc.data(); // .data() pega os campos (nome, codigoDeAcesso)
-            
-            // Guardamos o ID do documento e o nome do aluno na memória do navegador
-            sessionStorage.setItem('alunoId', doc.id);
-            sessionStorage.setItem('alunoNome', aluno.nome);
-            
-            // Agora redirecionamos para o dashboard
-            window.location.href = 'dashboard.html';
-            // ----- FIM DA MUDANÇA -----
+        if (codigoDigitado === "") {
+            alert("Por favor, digite seu código de acesso.");
+            return;
         }
 
-    } catch (error) {
-        console.error("Erro ao tentar fazer login: ", error);
-        alert("Ocorreu um erro ao tentar conectar. Tente novamente mais tarde.");
-    }
-}
+        try {
+            const q = query(collection(db, "alunos"), where("codigoDeAcesso", "==", codigoDigitado));
+            const querySnapshot = await getDocs(q);
 
-// 6. ADICIONAR O "OUVINTE" DE CLIQUE AO BOTÃO
-botaoLogin.addEventListener('click', verificarLogin);
+            if (querySnapshot.empty) {
+                alert("Código de acesso inválido ou não encontrado.");
+            } else {
+                // SUCESSO! Encontramos o aluno.
+                const doc = querySnapshot.docs[0];
+                const aluno = doc.data();
+                
+                // CORREÇÃO CRÍTICA: Salva o ID e o Nome na memória da sessão
+                sessionStorage.setItem('alunoId', doc.id);
+                sessionStorage.setItem('alunoNome', aluno.nome);
+                
+                // Redireciona para o dashboard
+                window.location.href = 'dashboard.html';
+            }
+        } catch (error) {
+            console.error("Erro ao tentar fazer login: ", error);
+            alert("Ocorreu um erro ao conectar com o servidor. Tente novamente.");
+        }
+    };
+
+    // Adiciona o evento de clique ao botão
+    if (botaoLogin) {
+        botaoLogin.addEventListener('click', tentarLogin);
+    }
+
+    // Adiciona o evento de "Enter" no campo de texto
+    if (campoCodigo) {
+        campoCodigo.addEventListener('keypress', function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault(); // Impede o comportamento padrão do formulário
+                tentarLogin();
+            }
+        });
+    }
+});
