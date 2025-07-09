@@ -722,7 +722,7 @@ main {
 }
 
 /* ================================================================= */
-/* ESTILOS DA NOVA ÁREA DE ANÁLISE (VERSÃO DEFINITIVA)            */
+/* ESTILOS DA NOVA ÁREA DE ANÁLISE (VERSÃO COM LAYOUT ESTÁVEL)     */
 /* ================================================================= */
 
 /* Container da sub-navegação */
@@ -750,19 +750,22 @@ main {
     border-bottom-color: #007BFF;
 }
 
-/* CORREÇÃO DO LAYOUT MÓVEL */
+/* CORREÇÃO DO LAYOUT HORIZONTAL */
 /* Este contêiner agora usa grid para sobrepor as duas sub-páginas */
 .sub-page-wrapper {
     margin-top: 30px;
-    min-height: 1200px; /* Garante que a área de conteúdo nunca encolha abaixo desta altura */
-}
-#sub-page-metricas, #sub-page-pontos {
-    /* Coloca ambas as páginas na mesma célula do grid, uma sobre a outra */
-    grid-column: 1 / 2;
-    grid-row: 1 / 2;
-    /* A classe .hidden fará o resto, mostrando apenas uma de cada vez */
+    min-height: 1200px; /* Mantém a altura mínima para evitar o salto vertical */
+    display: grid; /* Ativa o modo grid no contêiner pai */
+    /* Cria uma "célula" de grid única onde as duas páginas vão morar */
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
 }
 
+/* Posiciona ambas as sub-páginas na mesma célula, uma sobre a outra */
+#sub-page-metricas, #sub-page-pontos {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+}
 
 /* Blocos retráteis (Pontos Fortes / A Melhorar) */
 .bloco-analise {
@@ -811,13 +814,12 @@ main {
     border-top: 1px solid #e9edf2;
 }
 
-/* CORREÇÃO DO ÍCONE 'i' COM SVG */
+/* Ícone de informação 'i' com SVG */
 .info-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: help;
-    /* Estiliza o SVG que está dentro do span */
     stroke: #adb5bd; /* Define a cor da linha do SVG */
 }
 
