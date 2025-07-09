@@ -1,8 +1,8 @@
 /* ================================================================= */
-/* ESTILOS GLOBAIS E DA PÁGINA DE LOGIN                            */
+/* ESTILOS FINAIS E UNIFICADOS DA PLATAFORMA (LOGIN + DASHBOARD)   */
 /* ================================================================= */
 
-/* Estilos aplicados a ambas as páginas */
+/* --- ESTILOS GERAIS --- */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
@@ -10,29 +10,48 @@ body {
     background-color: #f0f4f8; 
 }
 
-/* Adicionado para centralizar o conteúdo da página de login */
+/* --- ESTILOS DA PÁGINA DE LOGIN (index.html) --- */
+
+/* Força o body da página de login a ocupar a tela toda para a centralização funcionar */
 body:not(.dashboard-body) {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    height: 100vh;
 }
 
-/* Estilos específicos para a página de login */
+header {
+    background-color: #ffffff;
+    color: #1c3d5a;
+    padding: 15px 30px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* CORREÇÃO: Diminui o tamanho do título em todas as páginas */
+header h1 {
+    font-size: 22px;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* CORREÇÃO: Centraliza apenas o box de login, e não a página inteira */
 .login-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background-color: #ffffff;
     padding: 40px;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 39, 112, 0.1);
     width: 100%;
     max-width: 400px;
-    margin: 20px;
     text-align: center;
     box-sizing: border-box;
 }
 
-.login-container h1, .login-container h2 {
+.login-container h2 {
     color: #1c3d5a;
+    margin-top: 0;
     margin-bottom: 10px;
 }
 
@@ -87,36 +106,20 @@ body:not(.dashboard-body) {
 
 
 /* ================================================================= */
-/* ESTILOS ESPECÍFICOS DO DASHBOARD                                */
+/* ESTILOS ESPECÍFICOS DO DASHBOARD (dashboard.html)               */
 /* ================================================================= */
 
-/* Aplica o layout de tela cheia apenas ao dashboard */
 body.dashboard-body {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    overflow: hidden; /* Impede o scroll no body principal */
-}
-
-/* Garante que o header não seja afetado pelo display:flex do body do dashboard */
-body.dashboard-body header {
-    flex-shrink: 0;
-}
-
-header {
-    background-color: #ffffff;
-    color: #1c3d5a;
-    padding: 15px 30px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid #e5e7eb;
-    font-weight: 600;
+    overflow: hidden; 
 }
 
 .dashboard-container {
     display: flex;
-    flex-grow: 1; /* Faz o container do dashboard ocupar o resto da altura */
-    overflow: hidden; /* Impede o scroll duplo */
+    flex-grow: 1;
+    overflow: hidden;
 }
 
 .sidebar {
@@ -139,7 +142,7 @@ header {
 .main-content {
     flex-grow: 1;
     padding: 30px 40px;
-    overflow-y: auto; /* Adiciona scroll apenas na área de conteúdo principal */
+    overflow-y: auto;
 }
 
 .main-content h2 { font-size: 28px; color: #1c3d5a; margin-top: 0; margin-bottom: 30px; }
@@ -157,15 +160,34 @@ header {
 .sub-nav { margin-bottom: 20px; display: flex; gap: 10px; border-bottom: 2px solid #e5e7eb; }
 .btn-subnav { padding: 10px 20px; border: none; background-color: transparent; cursor: pointer; font-size: 16px; font-weight: 500; color: #6b7280; border-bottom: 3px solid transparent; margin-bottom: -2px; }
 .btn-subnav.active { color: #007BFF; border-bottom-color: #007BFF; }
-.sub-page-wrapper { margin-top: 30px; }
+
+.sub-page-wrapper {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+#sub-page-metricas, #sub-page-pontos {
+    grid-area: 1 / 1 / -1 / -1;
+}
+
+/* O Grid de Métricas Visuais */
 .metricas-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 30px; width: 100%; }
-.metricas-grid .grid-item { &#coluna-stats { grid-column: 1 / 2; grid-row: 1 / 1; display: flex; flex-direction: column; gap: 20px; } &#coluna-heatmap { grid-column: 2 / 5; grid-row: 1 / 1; } &#coluna-donut { grid-column: 5 / 7; grid-row: 1 / 1; } &#item-semanal { grid-column: 1 / 4; grid-row: 2 / 2; } &#item-desempenho-materia { grid-column: 4 / 7; grid-row: 2 / 2; } &#item-questoes-materia { grid-column: 1 / 4; grid-row: 3 / 3; } &#item-flashcards-materia { grid-column: 4 / 7; grid-row: 3 / 3; } }
+.metricas-grid .grid-item {
+    &#coluna-stats { grid-column: 1 / 2; grid-row: 1 / 1; display: flex; flex-direction: column; gap: 20px; }
+    &#coluna-heatmap { grid-column: 2 / 5; grid-row: 1 / 1; }
+    &#coluna-donut { grid-column: 5 / 7; grid-row: 1 / 1; }
+    &#item-semanal { grid-column: 1 / 4; grid-row: 2 / 2; }
+    &#item-desempenho-materia { grid-column: 4 / 7; grid-row: 2 / 2; }
+    &#item-questoes-materia { grid-column: 1 / 4; grid-row: 3 / 3; }
+    &#item-flashcards-materia { grid-column: 4 / 7; grid-row: 3 / 3; }
+}
+
+/* Cards, Contêineres, Heatmap, Gráficos */
 .stat-card, .heatmap-container, .chart-container { background-color: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06); border: 1px solid #e9edf2; height: 100%; box-sizing: border-box; }
 .stat-card { text-align: center; padding: 15px 20px; }
 .stat-card h4 { margin: 0 0 4px 0; color: #4a5568; font-size: 14px; font-weight: 500; }
 .stat-card p { margin: 0; color: #007BFF; font-size: 28px; font-weight: bold; line-height: 1.1; }
 .chart-container h3, .heatmap-container h4 { margin: 0 0 20px 0; font-size: 18px; text-align: center; color: #1c3d5a; }
-.heatmap-container { display: flex; flex-direction: column; text-align: left; }
+.heatmap-container { display: flex; flex-direction: column; }
 .heatmap-container h4 { text-align: left; }
 #heatmap-calendario { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; gap: 4px; flex-grow: 1; min-height: 130px; }
 .heatmap-day { aspect-ratio: 1 / 1; background-color: #ebedf0; border-radius: 3px; }
