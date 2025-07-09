@@ -260,18 +260,18 @@ th.active-sort { color: #007BFF; }
 #modal-body input:focus, #modal-body select:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
 #modal-body .modal-buttons { margin-top: 10px; }
 
-/* ========================================= */
-/* ESTILOS DA SEÇÃO DO CRONÔMETRO (REDESIGN) */
-/* ========================================= */
+/* ========================================================= */
+/* ESTILOS DA SEÇÃO DO CRONÔMETRO (VERSÃO FINAL E POLIDA)  */
+/* ========================================================= */
 
+/* CORREÇÃO 1: Faz o card ocupar a largura toda, como a tabela de histórico */
 .cronometro-card {
     background-color: #ffffff;
     padding: 30px 40px;
     border-radius: 12px;
     border: 1px solid #e9edf2;
     box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06);
-    max-width: 900px; /* Largura similar à da tabela de histórico */
-    margin: 0 auto;
+    /* Removido o max-width e a margem para que ele ocupe o espaço disponível */
 }
 
 .cronometro-display-container {
@@ -281,11 +281,13 @@ th.active-sort { color: #007BFF; }
     margin-bottom: 30px;
 }
 
+/* CORREÇÃO 4: Design mais moderno e elegante para os números */
 #cronometro-display {
-    font-family: 'Roboto Mono', 'Courier New', monospace;
-    font-size: 4.5rem;
-    font-weight: 500;
-    color: #1c3d5a;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Usa a fonte padrão da plataforma */
+    font-size: 5.5rem;
+    font-weight: 300; /* Fonte mais leve */
+    color: #374151; /* Cor um pouco mais suave */
+    letter-spacing: 2px; /* Espaçamento mais sutil */
     margin-bottom: 25px;
 }
 
@@ -293,7 +295,7 @@ th.active-sort { color: #007BFF; }
     display: flex;
     justify-content: center;
     gap: 15px;
-    flex-wrap: wrap; /* Permite que os botões quebrem a linha em telas menores */
+    flex-wrap: wrap;
 }
 
 .cronometro-btn {
@@ -314,19 +316,42 @@ th.active-sort { color: #007BFF; }
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-.start-btn { background-color: #28a745; }
-.pause-btn { background-color: #ffc107; color: #1f2937; }
-.reset-btn { background-color: #6c757d; }
-.salvar-btn { background-color: #007BFF; } /* Azul para o botão de salvar */
+.start-btn { background-color: #28a745; } 
+.pause-btn { background-color: #ffc107; color: #1f2937;}
+/* CORREÇÃO 3: Botão Resetar agora é vermelho */
+.reset-btn { background-color: #dc3545; }
+.salvar-btn { background-color: #007BFF; }
 
+/* CORREÇÃO 2: Aplica o design moderno aos campos do formulário */
 .cronometro-form-container .form-row {
     display: flex;
     gap: 20px;
     margin-bottom: 20px;
 }
-
 .cronometro-form-container .form-group {
-    flex: 1; /* Faz os campos ocuparem o espaço igualmente */
+    flex: 1;
     display: flex;
     flex-direction: column;
+}
+
+/* Reutiliza os estilos dos outros formulários */
+.cronometro-form-container label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #374151;
+}
+.cronometro-form-container input, .cronometro-form-container select {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cronometro-form-container input:focus, .cronometro-form-container select:focus {
+    outline: none;
+    border-color: #007BFF;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
 }
