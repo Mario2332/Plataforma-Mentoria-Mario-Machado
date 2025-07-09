@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT FINAL E COMPLETO DO DASHBOARD (COM TODAS AS FUNÇÕES)
+// SCRIPT FINAL DO DASHBOARD (COM CRONÔMETRO E TODAS AS FUNÇÕES)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -18,15 +18,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Variáveis globais de estado
+// Variáveis Globais
 let meusRegistros = []; 
 let sortStateHistorico = { column: 'dataRegistro', direction: 'desc' };
 let sortStateMelhorar = { column: 'desempenho', direction: 'asc' };
 let sortStateFortes = { column: 'desempenho', direction: 'desc' };
-
 const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Filosofia", "Sociologia", "Linguagens"];
 let todosOsGraficos = {};
 const pluginTextoNoCentro = { id: 'text-center', afterDatasetsDraw(chart) { const { ctx, data } = chart; const text = data.datasets[0].text; if (!text) return; ctx.save(); const x = chart.getDatasetMeta(0).data[0].x; const y = chart.getDatasetMeta(0).data[0].y; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = '#1c3d5a'; ctx.fillText(text, x, y); ctx.restore(); } };
+let cronometroInterval, tempoEmSegundos = 0, cronometroAtivo = false;
+
 
 function normalizeString(str) {
     if (!str) return '';
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarFormulario(alunoId);
     configurarTabelasOrdenaveis();
     configurarModalPrincipal();
+    configurarCronometro(alunoId);
     
     const nomeAluno = sessionStorage.getItem('alunoNome');
     if (nomeAluno) { document.querySelector('.student-info h3').textContent = `Olá, ${nomeAluno}!`; }
@@ -60,9 +62,9 @@ async function carregarDadosIniciais(alunoId) {
     } catch (error) { console.error("Erro ao buscar dados iniciais: ", error); }
 }
 
-function configurarNavegacao(alunoId) {
-    const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico') };
-    const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos') };
+function configurarNavegacao() {
+    const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico'), cronometro: document.getElementById('nav-cronometro') };
+    const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos'), cronometro: document.getElementById('cronometro-estudos') };
     
     const btnSubNavMetricas = document.getElementById('btn-subnav-metricas');
     const btnSubNavPontos = document.getElementById('btn-subnav-pontos');
@@ -121,7 +123,7 @@ function configurarFormulario(alunoId) {
 }
 
 function configurarTabelasOrdenaveis() {
-    document.getElementById('tabela-historico').querySelector('thead').addEventListener('click', (e) => {
+    document.getElementById('tabela-historico')?.querySelector('thead')?.addEventListener('click', (e) => {
         const header = e.target.closest('th');
         if (!header || !header.classList.contains('sortable')) return;
         const column = header.dataset.sort;
@@ -130,7 +132,7 @@ function configurarTabelasOrdenaveis() {
         renderizarHistorico();
     });
 
-    document.getElementById('container-pontos-melhorar').addEventListener('click', (e) => {
+    document.getElementById('container-pontos-melhorar')?.addEventListener('click', (e) => {
         const header = e.target.closest('th');
         if (!header || !header.classList.contains('sortable')) return;
         const column = header.dataset.sort;
@@ -139,7 +141,7 @@ function configurarTabelasOrdenaveis() {
         processarAnalisePontos();
     });
 
-    document.getElementById('container-pontos-fortes').addEventListener('click', (e) => {
+    document.getElementById('container-pontos-fortes')?.addEventListener('click', (e) => {
         const header = e.target.closest('th');
         if (!header || !header.classList.contains('sortable')) return;
         const column = header.dataset.sort;
@@ -153,7 +155,6 @@ function renderizarHistorico() {
     const tbody = document.querySelector('#tabela-historico tbody');
     if (!tbody) return;
     
-    // Ordena a cópia dos registros para não afetar a ordem original
     const registrosOrdenados = [...meusRegistros].sort((a, b) => {
         let valA = a[sortStateHistorico.column]; 
         let valB = b[sortStateHistorico.column];
@@ -260,7 +261,6 @@ async function salvarEdicao(event) {
         questoesAcertadas: Number(document.getElementById('edit-acertos').value),
         flashcardsFeitos: Number(document.getElementById('edit-flashcards').value),
     };
-
     try {
         const docRef = doc(db, 'registros', docId);
         await updateDoc(docRef, dadosAtualizados);
@@ -271,14 +271,14 @@ async function salvarEdicao(event) {
         renderizarHistorico();
         hideCustomModal();
         showCustomAlert("Registro atualizado com sucesso!");
-    } catch (error) {
-        showCustomAlert("Falha ao atualizar o registro.", "erro");
+    } catch (error) { 
+        console.error("Erro ao atualizar o documento:", error);
+        showCustomAlert("Falha ao atualizar o registro.", "erro"); 
     }
 }
 
 async function deletarRegistro(event) {
     const docId = event.currentTarget.dataset.id;
-    
     const fazerExclusao = async () => {
         try {
             await deleteDoc(doc(db, "registros", docId));
@@ -287,10 +287,10 @@ async function deletarRegistro(event) {
             processarMetricas();
             showCustomAlert("Registro excluído com sucesso.");
         } catch (error) { 
-            showCustomAlert("Falha ao excluir o registro.", "erro");
+            console.error("Erro ao excluir o documento:", error);
+            showCustomAlert("Falha ao excluir o registro.", "erro"); 
         }
     };
-
     showCustomConfirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.", fazerExclusao);
 }
 
@@ -304,8 +304,10 @@ function configurarModalPrincipal() {
 }
 
 function showCustomModal(contentHTML) {
-    document.getElementById('modal-body').innerHTML = contentHTML;
-    document.getElementById('main-modal').classList.remove('hidden');
+    const modalBody = document.getElementById('modal-body');
+    const modalContainer = document.getElementById('main-modal');
+    modalBody.innerHTML = contentHTML;
+    modalContainer.classList.remove('hidden');
 }
 
 function hideCustomModal() {
@@ -343,7 +345,6 @@ function processarMetricas() {
     const grid = document.querySelector('#sub-page-metricas .metricas-grid');
     if (!grid) return;
     
-    // Popula a estrutura do grid de métricas se estiver vazia
     if (!grid.innerHTML.trim()) {
         grid.innerHTML = `
             <div class="grid-item" id="coluna-stats"><div class="stat-card"><h4>Tempo Total de Estudo</h4><p id="stat-tempo-total">--</p></div><div class="stat-card"><h4>Total de Questões</h4><p id="stat-questoes-total">--</p></div><div class="stat-card"><h4>Total de Acertos</h4><p id="stat-acertos-total">--</p></div><div class="stat-card"><h4>Desempenho Geral</h4><p id="stat-desempenho-geral">--</p></div></div>
@@ -352,7 +353,8 @@ function processarMetricas() {
             <div class="grid-item" id="item-semanal"><div class="chart-container"><h3>Desempenho nos Últimos 7 Dias</h3><canvas id="grafico-semanal"></canvas></div></div>
             <div class="grid-item" id="item-desempenho-materia"><div class="chart-container"><h3>Desempenho (%) por Matéria</h3><canvas id="grafico-desempenho"></canvas></div></div>
             <div class="grid-item" id="item-questoes-materia"><div class="chart-container"><h3>Questões Feitas por Matéria</h3><canvas id="grafico-materias"></canvas></div></div>
-            <div class="grid-item" id="item-flashcards-materia"><div class="chart-container"><h3>Flashcards Feitos por Matéria</h3><canvas id="grafico-flashcards-materia"></canvas></div></div>`;
+            <div class="grid-item" id="item-flashcards-materia"><div class="chart-container"><h3>Flashcards Feitos por Matéria</h3><canvas id="grafico-flashcards-materia"></canvas></div></div>
+        `;
     }
 
     let tempoTotal = 0, questoesTotal = 0, acertosTotal = 0;

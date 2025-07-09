@@ -250,3 +250,76 @@ th.active-sort { color: #007BFF; }
 #modal-body input, #modal-body select { width: 100%; padding: 12px 15px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; background-color: #f9fafb; color: #111827; transition: all 0.2s ease-in-out; }
 #modal-body input:focus, #modal-body select:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
 #modal-body .modal-buttons { margin-top: 10px; }
+
+/* ========================================= */
+/* ESTILOS DA SEÇÃO DO CRONÔMETRO          */
+/* ========================================= */
+
+.cronometro-wrapper {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+}
+
+.cronometro-display-container {
+    flex-basis: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06);
+    border: 1px solid #e9edf2;
+}
+
+#cronometro-display {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 5rem; /* Tamanho grande para o display */
+    font-weight: bold;
+    color: #1c3d5a;
+    letter-spacing: 5px;
+    margin-bottom: 30px;
+}
+
+.cronometro-controles {
+    display: flex;
+    gap: 15px;
+}
+
+.cronometro-btn {
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    transition: all 0.2s ease;
+}
+.cronometro-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.start-btn { background-color: #28a745; } /* Verde */
+.pause-btn { background-color: #ffc107; color: #1f2937;} /* Amarelo */
+.reset-btn { background-color: #dc3545; } /* Vermelho */
+
+
+.cronometro-form-container {
+    flex-basis: 50%;
+    max-width: 450px; /* Largura menor, como pedido */
+    background: #ffffff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    border: 1px solid #e9edf2;
+    box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06);
+}
+
+.cronometro-form-container h3 {
+    margin-top: 0;
+    text-align: center;
+    color: #1c3d5a;
+}
