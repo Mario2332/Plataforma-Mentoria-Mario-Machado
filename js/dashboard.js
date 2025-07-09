@@ -1,5 +1,5 @@
 // =================================================================
-// SCRIPT DO DASHBOARD (COM NOVOS GRÁFICOS DE TEMPO E ANÁLISE)
+// SCRIPT DO DASHBOARD (COM NOVOS GRÁFICOS DE TEMPO E FILTROS)
 // =================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -23,7 +23,6 @@ let meusRegistros = [];
 let todosOsGraficos = {};
 const TODAS_AS_MATERIAS = ["Matemática", "Física", "Química", "Biologia", "História", "Geografia", "Filosofia", "Sociologia", "Linguagens", "Redação"];
 
-// Mapeamento e cores para o gráfico de pizza
 const MAPA_DE_AREAS = {
     "Matemática": "Matemática", "Física": "Ciências da Natureza", "Química": "Ciências da Natureza", "Biologia": "Ciências da Natureza",
     "História": "Ciências Humanas", "Geografia": "Ciências Humanas", "Filosofia": "Ciências Humanas", "Sociologia": "Ciências Humanas",
@@ -76,14 +75,14 @@ async function carregarDadosIniciais(alunoId) {
             meusRegistros.push({ id: doc.id, ...doc.data() });
         });
         renderizarHistorico();
-        // Dispara o clique na aba de métricas para carregar os gráficos iniciais
-        document.getElementById('btn-subnav-metricas').click();
+        document.getElementById('nav-metricas')?.click(); // Clica na aba de métricas para carregar a visão inicial
     } catch (error) { console.error("Erro ao buscar dados iniciais: ", error); }
 }
 
 function configurarNavegacao() {
     const navItems = { registro: document.getElementById('nav-registro'), metricas: document.getElementById('nav-metricas'), historico: document.getElementById('nav-historico'), cronometro: document.getElementById('nav-cronometro') };
     const sections = { registro: document.getElementById('registro-estudos'), metricas: document.getElementById('minhas-metricas'), historico: document.getElementById('historico-estudos'), cronometro: document.getElementById('cronometro-estudos') };
+    
     const btnSubNavMetricas = document.getElementById('btn-subnav-metricas');
     const btnSubNavPontos = document.getElementById('btn-subnav-pontos');
     const pageMetricas = document.getElementById('sub-page-metricas');
@@ -179,7 +178,8 @@ function configurarTabelasOrdenaveis() {
 function renderizarHistorico() {
     const tbody = document.querySelector('#tabela-historico tbody');
     if (!tbody) return;
-
+    
+    // Ordena uma cópia dos registros para não afetar a ordem original ao salvar
     const registrosOrdenados = [...meusRegistros].sort((a, b) => {
         let valA = a[sortStateHistorico.column]; 
         let valB = b[sortStateHistorico.column];
@@ -224,8 +224,7 @@ function renderizarHistorico() {
                     <button class="action-btn edit-btn" title="Editar">✏️</button>
                     <button class="action-btn delete-btn" title="Excluir">🗑️</button>
                 </div>
-            </td>
-        `;
+            </td>`;
         tbody.appendChild(tr);
     });
 
@@ -320,10 +319,7 @@ async function deletarRegistro(event) {
             await deleteDoc(doc(db, "registros", docId));
             meusRegistros = meusRegistros.filter(r => r.id !== docId);
             renderizarHistorico();
-            // Se a aba de métricas estiver ativa, atualiza os gráficos
-            if(!document.getElementById('minhas-metricas').classList.contains('hidden')) {
-                processarMetricas();
-            }
+            processarMetricas();
             showCustomAlert("Registro excluído com sucesso.");
         } catch (error) { 
             console.error("Erro ao excluir o documento:", error);
@@ -354,9 +350,9 @@ function hideCustomModal() {
     document.getElementById('main-modal').classList.add('hidden');
 }
 
-function showCustomAlert(message, type = 'sucesso') {
+function showCustomAlert(message) {
     const alertHTML = `
-        <h3 style="color: ${type === 'erro' ? '#dc3545' : '#1c3d5a'}">Aviso</h3>
+        <h3>Aviso</h3>
         <p>${message}</p>
         <div class="modal-buttons">
             <button class="modal-btn btn-cancel">OK</button>
@@ -452,49 +448,53 @@ function processarMetricas() {
     Object.values(todosOsGraficos).forEach(grafico => grafico?.destroy());
     const labelsMaterias = TODAS_AS_MATERIAS;
     
-    // Gráficos de barra
-    todosOsGraficos.materias = new Chart(document.getElementById('grafico-materias'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Questões Feitas', data: labelsMaterias.map(m => dadosPorMateria[m].questoes), backgroundColor: 'rgba(54, 162, 235, 0.7)' }] }});
-    todosOsGraficos.desempenho = new Chart(document.getElementById('grafico-desempenho'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Desempenho (%)', data: labelsMaterias.map(m => { const d = dadosPorMateria[m]; return d.questoes > 0 ? (d.acertos / d.questoes) * 100 : 0; }), backgroundColor: 'rgba(255, 206, 86, 0.7)' }] }, options: { scales: { y: { max: 100 } } } });
-    todosOsGraficos.flashcards = new Chart(document.getElementById('grafico-flashcards-materia'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Flashcards Feitos', data: labelsMaterias.map(m => dadosPorMateria[m].flashcards), backgroundColor: 'rgba(153, 102, 255, 0.7)' }] }});
-    
-    // Gráfico de Rosca
     todosOsGraficos.donut = new Chart(document.getElementById('grafico-desempenho-geral'), { type: 'doughnut', data: { datasets: [{ data: [desempenhoGeral, 100 - desempenhoGeral], backgroundColor: ['#007BFF', '#e9edf2'], borderWidth: 0, text: `${desempenhoGeral.toFixed(0)}%` }] }, options: { responsive: true, cutout: '75%', plugins: { legend: { display: false } } }, plugins: [pluginTextoNoCentro] });
+    todosOsGraficos.materias = new Chart(document.getElementById('grafico-materias'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Questões Feitas', data: labelsMaterias.map(m => dadosPorMateria[m].questoes), backgroundColor: 'rgba(54, 162, 235, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
+    todosOsGraficos.desempenho = new Chart(document.getElementById('grafico-desempenho'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Desempenho (%)', data: labelsMaterias.map(m => { const d = dadosPorMateria[m]; return d.questoes > 0 ? (d.acertos / d.questoes) * 100 : 0; }), backgroundColor: 'rgba(255, 206, 86, 0.7)' }] }, options: { scales: { y: { beginAtZero: true, max: 100 } } } });
+    todosOsGraficos.flashcards = new Chart(document.getElementById('grafico-flashcards-materia'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Flashcards Feitos', data: labelsMaterias.map(m => dadosPorMateria[m].flashcards), backgroundColor: 'rgba(153, 102, 255, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
+    
+    const hojeFiltro = new Date();
+    const seteDiasAtras = new Date();
+    seteDiasAtras.setDate(hojeFiltro.getDate() - 6);
+    const registrosDaSemana = meusRegistros.filter(reg => reg.dataRegistro?.toDate() >= seteDiasAtras);
+    const labelsSemanais = [], dadosAcertosSemanais = [], dadosErrosSemanais = [];
+    for (let i = 0; i < 7; i++) {
+        const dia = new Date(seteDiasAtras); dia.setDate(dia.getDate() + i);
+        labelsSemanais.push(String(dia.getDate()).padStart(2, '0') + '/' + String(dia.getMonth() + 1).padStart(2, '0'));
+        let acertosNoDia = 0, errosNoDia = 0;
+        registrosDaSemana.forEach(reg => { if (reg.dataRegistro?.toDate().toDateString() === dia.toDateString()) { acertosNoDia += reg.questoesAcertadas; errosNoDia += reg.questoesFeitas - reg.questoesAcertadas; } });
+        dadosAcertosSemanais.push(acertosNoDia);
+        dadosErrosSemanais.push(errosNoDia);
+    }
+    todosOsGraficos.semanal = new Chart(document.getElementById('grafico-semanal'), { type: 'line', data: { labels: labelsSemanais, datasets: [ { label: 'Acertos', data: dadosAcertosSemanais, borderColor: 'rgba(75, 192, 192, 1)', fill: true, tension: 0.1 }, { label: 'Erros', data: dadosErrosSemanais, borderColor: 'rgba(255, 99, 132, 1)', fill: true, tension: 0.1 } ] }, options: { scales: { y: { beginAtZero: true } } } });
 
-    // --- NOVOS GRÁFICOS DE TEMPO ---
+    // GRÁFICOS DE TEMPO COM FILTRO
     const registrosTempoDiario = filtrarRegistrosPorPeriodo(filtroTempoDiario);
     const dadosTempoDiario = {};
     const labelsTempoDiario = [];
     const hojeData = new Date();
     const diasNoFiltro = parseInt(filtroTempoDiario.replace('d', ''));
     for (let i = diasNoFiltro - 1; i >= 0; i--) {
-        const data = new Date();
-        data.setDate(hojeData.getDate() - i);
+        const data = new Date(); data.setDate(hojeData.getDate() - i);
         const dataFormatada = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         labelsTempoDiario.push(dataFormatada);
         dadosTempoDiario[dataFormatada] = 0;
     }
     registrosTempoDiario.forEach(reg => {
         const dataFormatada = reg.dataRegistro.toDate().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        if (dadosTempoDiario.hasOwnProperty(dataFormatada)) {
-            dadosTempoDiario[dataFormatada] += reg.tempoEstudado || 0;
-        }
+        if (dadosTempoDiario.hasOwnProperty(dataFormatada)) { dadosTempoDiario[dataFormatada] += reg.tempoEstudado || 0; }
     });
-    todosOsGraficos.tempoDiario = new Chart(document.getElementById('grafico-tempo-diario'), { type: 'bar', data: { labels: labelsTempoDiario, datasets: [{ label: 'Minutos Estudados', data: Object.values(dadosTempoDiario), backgroundColor: 'rgba(0, 123, 255, 0.7)' }] } });
+    todosOsGraficos.tempoDiario = new Chart(document.getElementById('grafico-tempo-diario'), { type: 'bar', data: { labels: labelsTempoDiario, datasets: [{ label: 'Minutos Estudados', data: Object.values(dadosTempoDiario), backgroundColor: 'rgba(0, 123, 255, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } } });
 
     const registrosTempoMateria = filtrarRegistrosPorPeriodo(filtroTempoMateria);
     const dadosTempoPorMateria = {};
     TODAS_AS_MATERIAS.forEach(m => { dadosTempoPorMateria[m] = 0; });
-    registrosTempoMateria.forEach(reg => {
-        if (dadosTempoPorMateria.hasOwnProperty(reg.materia)) { dadosTempoPorMateria[reg.materia] += reg.tempoEstudado || 0; }
-    });
-    todosOsGraficos.tempoMateria = new Chart(document.getElementById('grafico-tempo-materia'), { type: 'bar', data: { labels: TODAS_AS_MATERIAS, datasets: [{ label: 'Tempo Total (min)', data: Object.values(dadosTempoPorMateria), backgroundColor: 'rgba(75, 192, 192, 0.7)' }] } });
+    registrosTempoMateria.forEach(reg => { if (dadosTempoPorMateria.hasOwnProperty(reg.materia)) { dadosTempoPorMateria[reg.materia] += reg.tempoEstudado || 0; } });
+    todosOsGraficos.tempoMateria = new Chart(document.getElementById('grafico-tempo-materia'), { type: 'bar', data: { labels: TODAS_AS_MATERIAS, datasets: [{ label: 'Tempo Total (min)', data: Object.values(dadosTempoPorMateria), backgroundColor: 'rgba(75, 192, 192, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
 
     const registrosTempoArea = filtrarRegistrosPorPeriodo(filtroTempoArea);
     const dadosTempoPorArea = { "Matemática": 0, "Ciências da Natureza": 0, "Ciências Humanas": 0, "Linguagens": 0, "Redação": 0 };
-    registrosTempoArea.forEach(reg => {
-        const area = MAPA_DE_AREAS[reg.materia];
-        if (area) { dadosTempoPorArea[area] += reg.tempoEstudado || 0; }
-    });
+    registrosTempoArea.forEach(reg => { const area = MAPA_DE_AREAS[reg.materia]; if (area) { dadosTempoPorArea[area] += reg.tempoEstudado || 0; } });
     todosOsGraficos.tempoArea = new Chart(document.getElementById('grafico-tempo-area'), { type: 'pie', data: { labels: Object.keys(dadosTempoPorArea), datasets: [{ data: Object.values(dadosTempoPorArea), backgroundColor: Object.values(CORES_AREAS) }] }, options: { responsive: true, maintainAspectRatio: false } });
 }
 
@@ -504,7 +504,10 @@ function processarAnalisePontos() {
         if (!reg.conteudo || !reg.questoesFeitas || reg.questoesFeitas === 0) return;
         const chave = normalizeString(reg.conteudo);
         if (!dadosPorConteudo[chave]) {
-            dadosPorConteudo[chave] = { conteudoOriginal: reg.conteudo, materia: reg.materia, questoes: 0, acertos: 0, ultimaData: new Date(0) };
+            dadosPorConteudo[chave] = {
+                conteudoOriginal: reg.conteudo, materia: reg.materia,
+                questoes: 0, acertos: 0, ultimaData: new Date(0)
+            };
         }
         dadosPorConteudo[chave].questoes += reg.questoesFeitas;
         dadosPorConteudo[chave].acertos += reg.questoesAcertadas;
@@ -513,6 +516,7 @@ function processarAnalisePontos() {
             dadosPorConteudo[chave].ultimaData = dataRegistro;
         }
     });
+
     const pontosAMelhorar = [], pontosFortes = [];
     Object.values(dadosPorConteudo).forEach(dado => {
         const desempenho = (dado.acertos / dado.questoes) * 100;
@@ -520,6 +524,7 @@ function processarAnalisePontos() {
         if (desempenho < 50) pontosAMelhorar.push(item);
         else if (desempenho >= 80) pontosFortes.push(item);
     });
+    
     renderizarTabelaAnalise('container-pontos-melhorar', pontosAMelhorar, sortStateMelhorar);
     renderizarTabelaAnalise('container-pontos-fortes', pontosFortes, sortStateFortes);
 }
@@ -527,6 +532,7 @@ function processarAnalisePontos() {
 function renderizarTabelaAnalise(containerId, dados, sortState) {
     const container = document.getElementById(containerId);
     if (!container) return;
+    
     dados.sort((a, b) => {
         let valA = a[sortState.column]; let valB = b[sortState.column];
         if(valA?.toDate) valA = valA.toDate();
@@ -535,12 +541,27 @@ function renderizarTabelaAnalise(containerId, dados, sortState) {
         if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
         return 0;
     });
+
     if (dados.length === 0) {
-        container.innerHTML = '<p style="padding: 20px 0;">Nenhum conteúdo encontrado para esta categoria.</p>';
+        container.innerHTML = '<p style="padding: 20px 0; text-align: center; color: #6b7280;">Nenhum conteúdo encontrado para esta categoria.</p>';
         return;
     }
-    let headers = `<th class="sortable" data-sort="materia">Matéria</th><th class="sortable" data-sort="conteudoOriginal">Conteúdo</th><th class="sortable" data-sort="questoes">Questões</th><th class="sortable" data-sort="acertos">Acertos</th><th class="sortable" data-sort="desempenho">Desempenho</th><th class="sortable" data-sort="ultimaData">Último Registro</th>`;
-    container.innerHTML = `<table class="tabela-analise"><thead><tr>${headers}</tr></thead><tbody>${dados.map(d => `<tr><td>${d.materia}</td><td>${d.conteudoOriginal}</td><td>${d.questoes}</td><td>${d.acertos}</td><td>${d.desempenho.toFixed(1)}%</td><td>${d.ultimaData.toLocaleDateString('pt-br')}</td></tr>`).join('')}</tbody></table>`;
+
+    let headers = `
+        <th class="sortable" data-sort="materia">Matéria</th>
+        <th class="sortable" data-sort="conteudoOriginal">Conteúdo</th>
+        <th class="sortable" data-sort="questoes">Questões</th>
+        <th class="sortable" data-sort="acertos">Acertos</th>
+        <th class="sortable" data-sort="desempenho">Desempenho</th>
+        <th class="sortable" data-sort="ultimaData">Último Registro</th>`;
+
+    container.innerHTML = `<table class="tabela-analise">
+        <thead><tr>${headers}</tr></thead>
+        <tbody>
+            ${dados.map(d => `<tr><td>${d.materia}</td><td>${d.conteudoOriginal}</td><td>${d.questoes}</td><td>${d.acertos}</td><td>${d.desempenho.toFixed(1)}%</td><td>${d.ultimaData.toLocaleDateString('pt-br')}</td></tr>`).join('')}
+        </tbody>
+    </table>`;
+    
     container.querySelectorAll('th.sortable').forEach(th => {
         if (th.dataset.sort === sortState.column) {
             th.classList.add('active-sort');
@@ -549,21 +570,64 @@ function renderizarTabelaAnalise(containerId, dados, sortState) {
 }
 
 function configurarCronometro(alunoId) {
-    const btnStart = document.getElementById('btn-start'), btnPause = document.getElementById('btn-pause'), btnReset = document.getElementById('btn-reset'), btnSalvar = document.getElementById('btn-salvar-cronometro'), formCronometro = document.getElementById('form-cronometro');
+    const btnStart = document.getElementById('btn-start');
+    const btnPause = document.getElementById('btn-pause');
+    const btnReset = document.getElementById('btn-reset');
+    const btnSalvar = document.getElementById('btn-salvar-cronometro');
+    const formCronometro = document.getElementById('form-cronometro');
+
     if(!btnStart || !btnPause || !btnReset || !btnSalvar || !formCronometro) return;
-    btnStart.addEventListener('click', () => { if (cronometroAtivo) return; cronometroAtivo = true; btnStart.disabled = true; btnPause.disabled = false; cronometroInterval = setInterval(() => { tempoEmSegundos++; atualizarDisplayCronometro(); }, 1000); });
-    btnPause.addEventListener('click', () => { clearInterval(cronometroInterval); cronometroAtivo = false; btnStart.disabled = false; btnPause.disabled = true; });
-    btnReset.addEventListener('click', () => { clearInterval(cronometroInterval); cronometroAtivo = false; tempoEmSegundos = 0; atualizarDisplayCronometro(); btnStart.disabled = false; btnPause.disabled = true; });
+
+    btnStart.addEventListener('click', () => {
+        if (cronometroAtivo) return;
+        cronometroAtivo = true;
+        btnStart.disabled = true;
+        btnPause.disabled = false;
+        cronometroInterval = setInterval(() => {
+            tempoEmSegundos++;
+            atualizarDisplayCronometro();
+        }, 1000);
+    });
+
+    btnPause.addEventListener('click', () => {
+        clearInterval(cronometroInterval);
+        cronometroAtivo = false;
+        btnStart.disabled = false;
+        btnPause.disabled = true;
+    });
+
+    btnReset.addEventListener('click', () => {
+        clearInterval(cronometroInterval);
+        cronometroAtivo = false;
+        tempoEmSegundos = 0;
+        atualizarDisplayCronometro();
+        btnStart.disabled = false;
+        btnPause.disabled = true;
+    });
+
     btnSalvar.addEventListener('click', async () => {
         clearInterval(cronometroInterval);
         cronometroAtivo = false;
+        btnStart.disabled = false;
+        btnPause.disabled = true;
+
         const materiaSelecionada = document.getElementById('cronometro-materia').value;
-        if (!materiaSelecionada) { showCustomAlert("Por favor, selecione a matéria antes de salvar.", "erro"); return; }
-        if (tempoEmSegundos < 60 && tempoEmSegundos > 0) { showCustomAlert("Sessões com menos de 1 minuto não são salvas. Continue estudando!", "info"); return; }
-        if (tempoEmSegundos === 0) { showCustomAlert("Inicie o cronômetro para registrar uma sessão.", "erro"); return; }
-        const tempoFinalEmMinutos = Math.round(tempoEmSegundos / 60);
+        if (!materiaSelecionada) {
+            showCustomAlert("Por favor, selecione a matéria antes de salvar.", "erro");
+            return;
+        }
+        if (tempoEmSegundos === 0) {
+             showCustomAlert("Inicie o cronômetro para registrar uma sessão.", "erro");
+            return;
+        }
+        
+        const tempoFinalEmMinutos = Math.max(1, Math.round(tempoEmSegundos / 60));
+        
         const novoRegistro = {
-            alunoId, materia: materiaSelecionada, conteudo: document.getElementById('cronometro-conteudo').value, tempoEstudado: tempoFinalEmMinutos,
+            alunoId,
+            materia: materiaSelecionada,
+            conteudo: document.getElementById('cronometro-conteudo').value,
+            tempoEstudado: tempoFinalEmMinutos,
             questoesFeitas: Number(document.getElementById('cronometro-questoes').value) || 0,
             questoesAcertadas: Number(document.getElementById('cronometro-acertos').value) || 0,
             flashcardsFeitos: Number(document.getElementById('cronometro-flashcards').value) || 0,
@@ -575,7 +639,7 @@ function configurarCronometro(alunoId) {
             renderizarHistorico();
             showCustomAlert(`Sessão de ${tempoFinalEmMinutos} minuto(s) salva com sucesso!`);
             formCronometro.reset();
-            btnReset.click();
+            btnReset.click(); // Reseta o cronômetro
         } catch (e) { showCustomAlert("Ocorreu um erro ao salvar a sessão.", "erro"); }
     });
 }
