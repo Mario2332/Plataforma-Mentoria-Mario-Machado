@@ -231,11 +231,36 @@ th.active-sort { color: #007BFF; }
 .btn-confirm:hover { background-color: #c82333; }
 .btn-cancel { background-color: #e9edf2; color: #4a5568; }
 .btn-cancel:hover { background-color: #dbe1e8; }
-#modal-body .form-group { margin-bottom: 20px; }
-#modal-body label { display: block; margin-bottom: 8px; color: #374151; font-weight: 500; font-size: 14px; }
-#modal-body input, #modal-body select { width: 100%; padding: 12px 15px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; background-color: #f9fafb; color: #111827; transition: all 0.2s ease-in-out; }
-#modal-body input:focus, #modal-body select:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
-#modal-body .modal-buttons { margin-top: 10px; }
+/* ESTILOS PARA FORMULÁRIOS DENTRO DE QUALQUER MODAL */
+.modal-content .form-group {
+    margin-bottom: 20px;
+}
+.modal-content label {
+    display: block;
+    margin-bottom: 8px;
+    color: #374151;
+    font-weight: 500;
+    font-size: 14px;
+}
+.modal-content input, .modal-content select {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-sizing: border-box;
+    background-color: #f9fafb;
+    color: #111827;
+    transition: all 0.2s ease-in-out;
+}
+.modal-content input:focus, .modal-content select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+.modal-content .modal-buttons {
+    margin-top: 10px;
+}
 
 /* CORREÇÃO PARA O GRÁFICO DE TEMPO DIÁRIO */
 #item-tempo-diario .chart-container {
@@ -287,7 +312,7 @@ th.active-sort { color: #007BFF; }
     margin-top: auto; /* Empurra o botão para o final da sidebar */
     width: 100%;
     padding: 12px 20px;
-    background-color: #495057;
+    background-color: #dc3545;
     color: white;
     border: none;
     border-radius: 8px;
@@ -298,7 +323,7 @@ th.active-sort { color: #007BFF; }
     transition: background-color 0.2s ease;
 }
 .logout-btn:hover {
-    background-color: #dc3545; /* Fica vermelho ao passar o mouse */
+    background-color: #c82333; /* Fica vermelho ao passar o mouse */
 }
 
 /* ========================================= */
@@ -350,4 +375,46 @@ th.active-sort { color: #007BFF; }
 
 #lista-alunos-container tr:last-child td {
     border-bottom: none;
+}
+
+/* Estilo para o botão de gerar código no modal do mentor */
+#form-add-aluno .form-group {
+    position: relative;
+}
+
+#form-add-aluno #btn-gerar-codigo {
+    position: absolute;
+    right: 8px;
+    top: 55%;
+    transform: translateY(-50%);
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+#form-add-aluno #btn-gerar-codigo:hover {
+    background: #5a6268;
+}
+
+/* Estilos para os botões de ação na tabela do mentor */
+.btn-tabela-ver, .btn-tabela-excluir {
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    margin-right: 8px;
+}
+
+.btn-tabela-ver {
+    background-color: #007BFF;
+}
+
+.btn-tabela-excluir {
+    background-color: #dc3545;
 }

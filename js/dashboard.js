@@ -4,6 +4,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { configurarModalPrincipal, showCustomAlert, showCustomConfirm, hideCustomModal, showCustomModal } from './shared.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCL2Lx5ccKeGVpybuxKZKLRscWYbcPgjJc",
@@ -363,54 +364,6 @@ async function deletarRegistro(event) {
         }
     };
     showCustomConfirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.", fazerExclusao);
-}
-
-function configurarModalPrincipal() {
-    const modal = document.getElementById('main-modal');
-    modal.addEventListener('click', (e) => {
-        if (e.target.classList.contains('close-modal-btn') || e.target === modal) {
-            hideCustomModal();
-        }
-    });
-}
-
-function showCustomModal(contentHTML) {
-    const modalBody = document.getElementById('modal-body');
-    if(modalBody) {
-        modalBody.innerHTML = contentHTML;
-    }
-    document.getElementById('main-modal').classList.remove('hidden');
-}
-
-function hideCustomModal() {
-    document.getElementById('main-modal').classList.add('hidden');
-}
-
-function showCustomAlert(message, type = 'sucesso') {
-    const alertHTML = `
-        <h3 style="color: ${type === 'erro' ? '#dc3545' : '#1c3d5a'}">Aviso</h3>
-        <p>${message}</p>
-        <div class="modal-buttons">
-            <button class="modal-btn btn-cancel">OK</button>
-        </div>`;
-    showCustomModal(alertHTML);
-    document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
-}
-
-function showCustomConfirm(message, onConfirm) {
-    const confirmHTML = `
-        <h3>Confirmação</h3>
-        <p>${message}</p>
-        <div class="modal-buttons">
-            <button class="modal-btn btn-cancel">Cancelar</button>
-            <button class="modal-btn btn-confirm">Excluir</button>
-        </div>`;
-    showCustomModal(confirmHTML);
-    document.querySelector('#main-modal .btn-cancel').addEventListener('click', hideCustomModal);
-    document.querySelector('#main-modal .btn-confirm').onclick = () => {
-        hideCustomModal();
-        onConfirm();
-    };
 }
 
 function configurarFiltrosGraficos() {
