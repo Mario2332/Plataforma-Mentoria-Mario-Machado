@@ -273,3 +273,11 @@ th.active-sort { color: #007BFF; }
     position: relative; /* Necessário para o Chart.js funcionar bem */
     flex-grow: 1; /* Faz a "caixa" do gráfico ocupar todo o espaço vertical disponível */
 }
+
+/* Tamanho fixo para o gráfico de Tempo por Área */
+#grafico-tempo-area {
+  width: 400px !important;
+  height: 400px !important;
+  display: block;
+  margin: auto; /* CENTRALIZA DENTRO DO BOX */
+}
