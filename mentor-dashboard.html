@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Mentor - Plataforma de Estudos</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard-body">
+
+    <header>
+        <h1>Mentoria Mario Machado</h1>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <aside class="sidebar">
+            <div class="student-info">
+                <h3>Olá, Mentor!</h3>
+            </div>
+            <nav>
+                <ul>
+                    <li id="nav-meus-alunos" class="active"><a href="#">Meus Alunos</a></li>
+                    </ul>
+            </nav>
+            <button id="btn-logout" class="logout-btn">Sair</button>
+        </aside>
+
+        <main class="main-content">
+           <section id="meus-alunos">
+               <div class="header-section">
+                  <h2>Meus Alunos</h2>
+                  <button id="btn-add-aluno" class="btn-principal">+ Adicionar Novo Aluno</button>
+               </div>
+               <div id="lista-alunos-container" class="tabela-container">
+                  <p>Carregando alunos...</p>
+               </div>
+           </section>
+        </main>
+    </div>
+
+    <script type="module" src="js/mentor.js"></script>
+</body>
+</html>
