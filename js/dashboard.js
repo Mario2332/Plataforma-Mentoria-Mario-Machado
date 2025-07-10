@@ -48,6 +48,23 @@ function normalizeString(str) {
     return str.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+function filtrarRegistrosPorPeriodo(periodo) {
+    const agora = new Date();
+    let dataInicio = new Date();
+    dataInicio.setHours(0, 0, 0, 0); // Zera a hora para comparações precisas
+
+    switch (periodo) {
+        case '7d': dataInicio.setDate(agora.getDate() - 6); break;
+        case '14d': dataInicio.setDate(agora.getDate() - 13); break;
+        case '30d': dataInicio.setDate(agora.getDate() - 29); break;
+        case 'ano': dataInicio = new Date(agora.getFullYear(), 0, 1); break;
+        case '12m': dataInicio.setFullYear(agora.getFullYear() - 1); break;
+        default: return meusRegistros;
+    }
+    
+    return meusRegistros.filter(reg => reg.dataRegistro.toDate() >= dataInicio);
+}
+
 function formatarMinutosParaHorasMinutos(totalMinutos) {
     if (isNaN(totalMinutos) || totalMinutos === 0) return "0min";
     const horas = Math.floor(totalMinutos / 60);
@@ -426,9 +443,9 @@ function configurarFiltrosGraficos() {
 function processarMetricas() {
     Object.values(todosOsGraficos).forEach(grafico => grafico?.destroy());
     
+    // 1. CÁLCULO GERAL DOS DADOS
     let tempoTotal = 0, questoesTotal = 0, acertosTotal = 0;
-    const contagemPorDia = {};
-    const dadosPorMateria = {};
+    const contagemPorDia = {}, dadosPorMateria = {};
     TODAS_AS_MATERIAS.forEach(materia => { dadosPorMateria[materia] = { questoes: 0, acertos: 0, flashcards: 0, tempo: 0 }; });
 
     meusRegistros.forEach(reg => {
@@ -445,6 +462,7 @@ function processarMetricas() {
         }
     });
 
+    // 2. ATUALIZAÇÃO DOS CARDS DE ESTATÍSTICAS E HEATMAP
     const desempenhoGeral = questoesTotal > 0 ? (acertosTotal / questoesTotal) * 100 : 0;
     document.getElementById('stat-tempo-total').textContent = formatarMinutosParaHorasMinutos(tempoTotal);
     document.getElementById('stat-questoes-total').textContent = questoesTotal;
@@ -474,16 +492,21 @@ function processarMetricas() {
         diaElemento.classList.add('heatmap-day');
         let nivel = 0;
         if (contagem > 0) nivel = 1; if (contagem > 2) nivel = 2; if (contagem > 5) nivel = 3; if (contagem > 8) nivel = 4;
-        if (nivel > 0) {
-            diaElemento.classList.add(`level-${nivel}`);
-        }
+        if (nivel > 0) { diaElemento.classList.add(`level-${nivel}`); }
         diaElemento.title = `${contagem} registros em ${diaAtual.toLocaleDateString('pt-BR')}`;
         heatmapContainer.appendChild(diaElemento);
     }
     
+    // 3. DESENHO DOS GRÁFICOS
     const labelsMaterias = TODAS_AS_MATERIAS;
     
-    todosOsGraficos.donut = new Chart(document.getElementById('grafico-desempenho-geral'), { type: 'doughnut', data: { datasets: [{ data: [desempenhoGeral, 100 - desempenhoGeral], backgroundColor: ['#007BFF', '#e9edf2'], borderWidth: 0, text: `${desempenhoGeral.toFixed(0)}%` }] }, options: { responsive: true, cutout: '75%', plugins: { legend: { display: false } } }, plugins: [pluginTextoNoCentro] });
+    todosOsGraficos.donut = new Chart(document.getElementById('grafico-desempenho-geral'), {
+        type: 'doughnut',
+        data: { datasets: [{ data: [desempenhoGeral, 100 - desempenhoGeral], backgroundColor: ['#007BFF', '#e9edf2'], borderWidth: 0, text: `${desempenhoGeral.toFixed(0)}%` }] },
+        options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } },
+        plugins: [pluginTextoNoCentro]
+    });
+    
     todosOsGraficos.materias = new Chart(document.getElementById('grafico-materias'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Questões Feitas', data: labelsMaterias.map(m => dadosPorMateria[m].questoes), backgroundColor: 'rgba(54, 162, 235, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
     todosOsGraficos.desempenho = new Chart(document.getElementById('grafico-desempenho'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Desempenho (%)', data: labelsMaterias.map(m => { const d = dadosPorMateria[m]; return d.questoes > 0 ? (d.acertos / d.questoes) * 100 : 0; }), backgroundColor: 'rgba(255, 206, 86, 0.7)' }] }, options: { scales: { y: { beginAtZero: true, max: 100 } } } });
     todosOsGraficos.flashcards = new Chart(document.getElementById('grafico-flashcards-materia'), { type: 'bar', data: { labels: labelsMaterias, datasets: [{ label: 'Flashcards Feitos', data: labelsMaterias.map(m => dadosPorMateria[m].flashcards), backgroundColor: 'rgba(153, 102, 255, 0.7)' }] }, options: { scales: { y: { beginAtZero: true } } } });
@@ -509,7 +532,6 @@ function processarMetricas() {
     }
     todosOsGraficos.semanal = new Chart(document.getElementById('grafico-semanal'), { type: 'line', data: { labels: labelsSemanais, datasets: [ { label: 'Acertos', data: dadosAcertosSemanais, borderColor: 'rgba(75, 192, 192, 1)', fill: true, tension: 0.1 }, { label: 'Erros', data: dadosErrosSemanais, borderColor: 'rgba(255, 99, 132, 1)', fill: true, tension: 0.1 } ] }, options: { scales: { y: { beginAtZero: true } } } });
 
-    // GRÁFICOS DE TEMPO COM FILTRO E NOVA FORMATAÇÃO
     const registrosTempoDiario = filtrarRegistrosPorPeriodo(filtroTempoDiario);
     const dadosTempoDiario = {};
     const labelsTempoDiario = [];
@@ -529,35 +551,36 @@ function processarMetricas() {
         }
     });
     todosOsGraficos.tempoDiario = new Chart(document.getElementById('grafico-tempo-diario'), {
-        type: 'bar',
-        data: {
-            labels: labelsTempoDiario,
-            datasets: [{
-                label: 'Tempo Estudado',
-                data: Object.values(dadosTempoDiario),
-                backgroundColor: 'rgba(0, 123, 255, 0.7)'
-            }]
-        },
-        options: {
-            aspectRatio: 3,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: value => `${formatarMinutosParaHorasMinutos(value)}`
-                    }
+    type: 'bar',
+    data: {
+        labels: labelsTempoDiario,
+        datasets: [{
+            label: 'Tempo Estudado',
+            data: Object.values(dadosTempoDiario),
+            backgroundColor: 'rgba(0, 123, 255, 0.7)'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false, // <-- MUDANÇA CRÍTICA: Permite que o gráfico preencha a caixa
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: value => `${formatarMinutosParaHorasMinutos(value)}`
                 }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (c) => `Tempo: ${formatarMinutosParaHorasMinutos(c.raw)}`
-                    }
+            }
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: (c) => `Tempo: ${formatarMinutosParaHorasMinutos(c.raw)}`
                 }
             }
         }
-    });
+    }
+});
 
     const registrosTempoMateria = filtrarRegistrosPorPeriodo(filtroTempoMateria);
     const dadosTempoPorMateria = {};
@@ -579,22 +602,10 @@ function processarMetricas() {
         },
         options: {
             indexAxis: 'y',
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: value => `${formatarMinutosParaHorasMinutos(value)}`
-                    }
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (c) => `Tempo: ${formatarMinutosParaHorasMinutos(c.raw)}`
-                    }
-                }
-            }
+            responsive: true,
+            maintainAspectRatio: false, // <-- CORREÇÃO: Permite que o gráfico preencha a altura do contêiner
+            scales: { x: { ticks: { callback: value => formatarMinutosParaHorasMinutos(value) } } },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Tempo: ${formatarMinutosParaHorasMinutos(c.raw)}` } } }
         }
     });
 
@@ -608,7 +619,7 @@ function processarMetricas() {
     });
     const totalTempoArea = Object.values(dadosTempoPorArea).reduce((soma, v) => soma + v, 0);
     todosOsGraficos.tempoArea = new Chart(document.getElementById('grafico-tempo-area'), {
-        type: 'pie',
+        type: 'doughnut',
         data: {
             labels: Object.keys(dadosTempoPorArea),
             datasets: [{
@@ -618,6 +629,8 @@ function processarMetricas() {
         },
         options: {
             responsive: true,
+            cutout: '70%',
+            maintainAspectRatio: true,
             plugins: {
                 tooltip: {
                     callbacks: {

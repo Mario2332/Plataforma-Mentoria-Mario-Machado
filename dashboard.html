@@ -77,8 +77,8 @@
             <section id="minhas-metricas" class="hidden">
                 <h2>Painel de Métricas</h2>
                 <div class="sub-nav">
-                    <button id="btn-subnav-metricas" class="btn-subnav active">Minhas Métricas</button>
-                    <button id="btn-subnav-pontos" class="btn-subnav">Pontos Fortes e A Melhorar</button>
+                    <button id="btn-subnav-metricas" class="btn-subnav active">Minhas métricas</button>
+                    <button id="btn-subnav-pontos" class="btn-subnav">Pontos fortes e a melhorar</button>
                 </div>
 
                 <div class="sub-page-wrapper">
@@ -110,7 +110,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <canvas id="grafico-tempo-diario"></canvas>
+                                    <div class="chart-canvas-wrapper">
+                                     <canvas id="grafico-tempo-diario"></canvas>
+                                    </div>
                                 </div>
                             </div>
                             <div class="grid-item" id="item-tempo-materia">
@@ -128,7 +130,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <canvas id="grafico-tempo-materia"></canvas>
+                                    <div class="bar-chart-wrapper">
+                                      <canvas id="grafico-tempo-materia"></canvas>
+                                    </div>
                                 </div>
                             </div>
                             <div class="grid-item" id="item-tempo-area">
@@ -155,7 +159,7 @@
                     <div id="sub-page-pontos" class="hidden">
                         <details class="bloco-analise" open>
                             <summary>
-                                Pontos a Melhorar
+                                Pontos a melhorar
                                 <span class="info-icon" title="Conteúdos com desempenho abaixo de 50%">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                                 </span>
@@ -164,7 +168,7 @@
                         </details>
                         <details class="bloco-analise" open>
                             <summary>
-                                Pontos Fortes e A Melhorar
+                                Pontos fortes
                                 <span class="info-icon" title="Conteúdos com desempenho igual ou acima de 80%">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                                 </span>
