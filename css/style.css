@@ -198,20 +198,75 @@ body.dashboard-body header { flex-shrink: 0; }
 .tabela-analise tbody tr { border-bottom: 1px solid #f0f0f0; }
 .tabela-analise tbody tr:last-child { border-bottom: none; }
 
-/* --- HISTÓRICO DE ESTUDOS --- */
-th.sortable { cursor: pointer; user-select: none; }
-th.sortable:hover { background-color: #f4f7f6; }
-th.active-sort { color: #007BFF; }
-#historico-estudos .tabela-container { background-color: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06); border: 1px solid #e9edf2; overflow-x: auto; }
-#tabela-historico { width: 100%; border-collapse: collapse; font-size: 14px; }
-#tabela-historico thead tr { border-bottom: 2px solid #e5e7eb; }
-#tabela-historico th { padding: 12px 15px; text-align: left; font-weight: 600; color: #374151; }
-#tabela-historico tbody tr { border-bottom: 1px solid #f3f4f6; }
-#tabela-historico tbody tr:last-child { border-bottom: none; }
-#tabela-historico tbody tr:hover { background-color: #f9fafb; }
-#tabela-historico td { padding: 12px 15px; color: #374151; vertical-align: middle; }
-#tabela-historico .action-buttons { opacity: 0; transition: opacity 0.2s ease-in-out; display: flex; gap: 10px; }
-#tabela-historico tbody tr:hover .action-buttons { opacity: 1; }
+/* ========================================================= */
+/* ESTILOS DE TABELA MODERNA REUTILIZÁVEL                  */
+/* ========================================================= */
+.tabela-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 39, 112, 0.06);
+    border: 1px solid #e9edf2;
+    overflow-x: auto;
+}
+
+.tabela-moderna {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.tabela-moderna thead tr {
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.tabela-moderna th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+}
+
+.tabela-moderna th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+.tabela-moderna th.sortable:hover {
+    background-color: #f9fafb;
+}
+.tabela-moderna th.active-sort {
+    color: #007BFF;
+}
+
+.tabela-moderna tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.tabela-moderna tbody tr:last-child {
+    border-bottom: none;
+}
+
+.tabela-moderna tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.tabela-moderna td {
+    padding: 12px 15px;
+    color: #374151;
+    vertical-align: middle;
+}
+
+.tabela-moderna .action-buttons {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    display: flex;
+    gap: 10px;
+}
+
+.tabela-moderna tbody tr:hover .action-buttons {
+    opacity: 1;
+}
+
 .action-btn { border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: 500; }
 .edit-btn { background-color: #007BFF; }
 .delete-btn { background-color: #dc3545; }
@@ -400,7 +455,7 @@ th.active-sort { color: #007BFF; }
 }
 
 /* Estilos para os botões de ação na tabela do mentor */
-.btn-tabela-ver, .btn-tabela-excluir {
+.btn-tabela-ver, .btn-tabela-excluir, .btn-tabela-editar, .btn-tabela-anotacoes {
     border: none;
     padding: 6px 12px;
     border-radius: 6px;
@@ -417,4 +472,158 @@ th.active-sort { color: #007BFF; }
 
 .btn-tabela-excluir {
     background-color: #dc3545;
+}
+
+.btn-tabela-editar {
+    background-color: #ffc107; /* Amarelo para edição */
+    color: #1f2937;
+}
+
+/* Estilos para a barra de pesquisa do mentor */
+.search-container {
+    margin-bottom: 20px;
+}
+
+#input-pesquisa-aluno {
+    width: 100%;
+    max-width: 400px; /* Limita a largura da barra */
+    padding: 12px 15px;
+    font-size: 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+#input-pesquisa-aluno:focus {
+    outline: none;
+    border-color: #007BFF;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* Estilo para a área de texto no modal de anotações */
+#modal-body textarea {
+width: 100%;
+padding: 12px 15px;
+font-size: 15px;
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+border: 1px solid #d1d5db;
+border-radius: 8px;
+box-sizing: border-box;
+resize: none;
+height: 100px; 
+overflow-y: auto; 
+}
+
+#modal-body textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* --- AJUSTES FINAIS PARA MODAL DE ANOTAÇÕES --- */
+
+/* ========================================================= */
+/* ESTILOS FINAIS E CORRIGIDOS PARA O MODAL DE ANOTAÇÕES     */
+/* ========================================================= */
+
+/* Define o tamanho do pop-up e o torna um container flexível vertical */
+#notas-modal .modal-content {
+    max-width: 800px;
+    width: 80vw;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Faz o formulário crescer para ocupar o espaço vertical disponível */
+#notas-modal #form-notas {
+    flex-grow: 1; /* << CHAVE DA SOLUÇÃO */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Faz o grupo do formulário que contém a área de texto também crescer */
+#notas-modal #form-notas .form-group {
+    flex-grow: 1; /* << CHAVE DA SOLUÇÃO */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Faz a área de texto preencher todo o espaço que seu grupo ocupou */
+#notas-modal #form-notas textarea {
+    flex-grow: 1; /* << CHAVE DA SOLUÇÃO */
+    resize: none; /* Desativa o redimensionamento manual */
+}
+
+.btn-tabela-anotacoes {
+background-color: #6c757d; /* Um cinza neutro para anotações */
+color: white;
+}
+
+/* ========================================================= */
+/* ESTILOS PARA O EDITOR DE TEXTO QUILL.JS                 */
+/* ========================================================= */
+
+/* Faz o contêiner do editor crescer */
+#editor-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Faz o editor preencher o espaço vertical */
+#editor-wrapper .ql-container {
+    flex-grow: 1;
+    font-size: 15px; /* Define o tamanho da fonte padrão do editor */
+}
+
+/* ========================================================= */
+/* CORREÇÃO DEFINITIVA DA BARRA DE ROLAGEM DO EDITOR         */
+/* ========================================================= */
+
+/* Faz a área de conteúdo do editor (a "folha de papel") ser rolável */
+#editor-wrapper .ql-editor {
+    overflow-y: auto; /* Adiciona a barra de rolagem vertical quando o texto for muito grande */
+    height: 100%;     /* Garante que ele tente ocupar toda a altura disponível */
+}
+
+/* ========================================================= */
+/* CORREÇÃO DEFINITIVA PARA O LAYOUT DO MODAL DE ANOTAÇÕES   */
+/* ========================================================= */
+
+/* 1. Define o tamanho do pop-up e o torna um container flexível */
+#notas-modal .modal-content {
+    max-width: 800px; /* Largura maior */
+    width: 80vw;
+    height: 85vh;     /* Altura maior, relativa à tela */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 2. Faz o formulário crescer para ocupar todo o espaço disponível */
+#notas-modal #form-notas {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Corrige um bug do flexbox em alguns navegadores */
+}
+
+/* 3. Faz o div que contém a área do editor também crescer */
+#notas-modal #editor-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* 4. Faz a área de texto editável do Quill.js ser rolável */
+#notas-modal .ql-editor {
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* 5. Garante que os botões fiquem no final */
+#notas-modal .modal-buttons {
+    margin-top: 60px;
+    flex-shrink: 0; /* Impede que os botões sejam espremidos ou empurrados */
 }
